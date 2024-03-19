@@ -5,7 +5,7 @@ import "github.com/gofiber/fiber/v3"
 func main() {
 	app := fiber.New()
 
-	queue := app.Group("/bc/queue")
+	queue := app.Group("/bc/dashboard")
 
 	queue.Get("/", func(c fiber.Ctx) error {
 		return c.SendString("Hello, World 👋!")
