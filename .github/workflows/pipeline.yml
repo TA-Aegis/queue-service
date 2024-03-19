@@ -65,9 +65,10 @@ jobs:
 
       - name: Create secret
         run: |
-          cd ./files/secrets/
-          ls
           echo "${{ vars.ENV }}" > ./files/secrets/secrets.config.json
+
+      - name: Test secret
+        run: |
           cat ./files/secrets/secrets.config.json
 
       - name: Build and push Docker Image
