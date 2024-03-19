@@ -65,6 +65,8 @@ jobs:
 
       - name: Create secret
         run: |
+          cd ./files/secrets/
+          ls
           echo "${{ vars.ENV }}" > ./files/secrets/secrets.config.json
           cat ./files/secrets/secrets.config.json
 
