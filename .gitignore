@@ -25,3 +25,6 @@ go.sum
 
 # Mac
 .DS_Store
+
+# Config files
+files/secrets/secrets.config.json

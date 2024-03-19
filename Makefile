@@ -7,4 +7,4 @@ stop:
 down:
 	docker compose down
 run:
-	go run application/*.go
+	go run application/rest/*.go

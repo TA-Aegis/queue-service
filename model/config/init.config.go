@@ -7,7 +7,7 @@ import (
 )
 
 func New() (*Config, error) {
-	filePath := "./files/secrets/config.secrets.json"
+	filePath := "./files/secrets/secrets.config.json"
 	var config Config
 
 	// Open the JSON file
