@@ -65,8 +65,8 @@ jobs:
 
       - name: Create secret
         run: |
-          echo "${{ vars.ENV }}" > files/secrets/secrets.config.json
-          cat files/secrets/secrets.config.json
+          echo "${{ vars.ENV }}" > ./files/secrets/secrets.config.json
+          cat ./files/secrets/secrets.config.json
 
       - name: Build and push Docker Image
         run: |
@@ -100,8 +100,8 @@ jobs:
 
       - name: Create secret
         run: |
-          echo "${{ vars.ENV }}" > files/secrets/secrets.config.json
-          cat files/secrets/secrets.config.json
+          echo "${{ vars.ENV }}" > ./files/secrets/secrets.config.json
+          cat ./files/secrets/secrets.config.json
 
       - name: Login Docker
         run: |
@@ -145,8 +145,8 @@ jobs:
 
       - name: Create secret
         run: |
-          echo "${{ vars.ENV }}" > files/secrets/secrets.config.json
-          cat files/secrets/secrets.config.json
+          echo "${{ vars.ENV }}" > ./files/secrets/secrets.config.json
+          cat ./files/secrets/secrets.config.json
 
       - name: Build, tag, and push image to Amazon ECR
         env:
@@ -184,8 +184,8 @@ jobs:
 
       - name: Create secret
         run: |
-          echo "${{ vars.ENV }}" > files/secrets/secrets.config.json
-          cat files/secrets/secrets.config.json
+          echo "${{ vars.ENV }}" > ./files/secrets/secrets.config.json
+          cat ./files/secrets/secrets.config.json
 
   deploy-to-server-do:
     needs: dockerize-and-push-do
