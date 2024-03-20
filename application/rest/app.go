@@ -1,4 +1,4 @@
-package main
+package rest
 
 import (
 	"antrein/bc-dashboard/model/config"
@@ -9,7 +9,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/cors"
 )
 
-func applicationDelegate(cfg *config.Config) (*fiber.App, error) {
+func ApplicationDelegate(cfg *config.Config) (*fiber.App, error) {
 	// ctx := context.Background()
 	app := fiber.New(fiber.Config{
 		AppName: fmt.Sprintf("%s %s", cfg.Server.Name, cfg.Stage),

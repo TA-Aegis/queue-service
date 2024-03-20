@@ -1,4 +1,4 @@
-package application
+package main
 
 import (
 	"antrein/bc-dashboard/model/config"
