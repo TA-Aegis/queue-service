@@ -1,3 +1,12 @@
+PROTO_SRC_DIR := pkg
+PROTO_FILES := $(wildcard $(PROTO_SRC_DIR)/*.proto)
+
+ifeq ($(PROTO),)
+	PROTOS := $(wildcard $(PROTO_SRC_DIR)/*.proto)
+else
+	PROTOS := $(PROTO_SRC_DIR)/$(PROTO)
+endif
+
 all: run
 
 up:
@@ -13,4 +22,7 @@ run:
 docker-build:
 	docker build -t ta-bc-dashboard .
 docker-run:
-	docker run -d -p 80:8080 -p 9090:9090 ta-bc-dashboard
+	docker run -d -p 8080:8080 -p 9090:9090 ta-bc-dashboard
+
+protoc: 
+	protoc --go_out=. --go-grpc_out=. $(PROTOS)

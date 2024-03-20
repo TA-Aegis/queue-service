@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "antrein/bc-dashboard/pb";
+option go_package = "/internal/pb";
 
 service Greeter {
   rpc SayHello (HelloRequest) returns (HelloResponse) {}
