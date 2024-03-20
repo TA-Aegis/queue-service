@@ -13,4 +13,4 @@ run:
 docker-build:
 	docker build -t ta-bc-dashboard .
 docker-run:
-	docker run -d -p 8080:8080 -p 9090:9090 ta-bc-dashboard
+	docker run -d -p 80:8080 -p 9090:9090 ta-bc-dashboard
