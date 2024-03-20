@@ -21,13 +21,11 @@ spec:
          image: <IMAGE_NAME>
          imagePullPolicy: Always
          ports:
-          - name: rest
-            containerPort: 8080
+          - containerPort: 8080
             protocol: TCP
-          - name: grpc
-            containerPort: 9090
+          - containerPort: 9090
             protocol: TCP
-
+            
 ---
 apiVersion: v1
 kind: Service
