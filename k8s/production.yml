@@ -42,10 +42,12 @@ spec:
     app: <PROJECT_NAME>-pods #targeting service name
   type: ClusterIP
   ports:
-  - protocol: TCP
+  - name: rest
+    protocol: TCP
     port: 8080
     targetPort: 8080
-  - protocol: TCP
+  - name: grpc
+    protocol: TCP
     port: 9090
     targetPort: 9090
 
