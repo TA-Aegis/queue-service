@@ -14,4 +14,6 @@ RUN go build -o binary application/*.go
 
 EXPOSE 8080
 
+EXPOSE 9090
+
 ENTRYPOINT ["/app/binary"]

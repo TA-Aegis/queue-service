@@ -10,7 +10,7 @@ import (
 )
 
 func StartServer(cfg *config.Config) error {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.Server.Port))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.Server.GRPC.Port))
 	if err != nil {
 		return err
 	}

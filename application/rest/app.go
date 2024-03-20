@@ -12,7 +12,7 @@ import (
 func ApplicationDelegate(cfg *config.Config) (*fiber.App, error) {
 	// ctx := context.Background()
 	app := fiber.New(fiber.Config{
-		AppName: fmt.Sprintf("%s %s", cfg.Server.Name, cfg.Stage),
+		AppName: fmt.Sprintf("%s %s", cfg.Server.Rest.Name, cfg.Stage),
 	})
 
 	// setup gzip

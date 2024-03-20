@@ -8,5 +8,5 @@ import (
 )
 
 func StartServer(cfg *config.Config, app *fiber.App) error {
-	return app.Listen(fmt.Sprintf(":%s", cfg.Server.Port))
+	return app.Listen(fmt.Sprintf(":%s", cfg.Server.Rest.Port))
 }

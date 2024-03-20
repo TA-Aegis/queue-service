@@ -20,6 +20,11 @@ type RedisConfig struct {
 }
 
 type ServerConfig struct {
+	GRPC PortConfig `json:"grpc"`
+	Rest PortConfig `json:"rest"`
+}
+
+type PortConfig struct {
 	Port string `json:"port"`
 	Name string `json:"name"`
 }
