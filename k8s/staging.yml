@@ -49,7 +49,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: <PROJECT_NAME>-grp
+  name: <PROJECT_NAME>-grpc
   namespace: staging
   labels:
    app: <PROJECT_NAME> #create services with label name
