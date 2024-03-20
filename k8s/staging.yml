@@ -35,7 +35,7 @@ metadata:
   name: <PROJECT_NAME>-rest
   namespace: staging
   labels:
-   app: <PROJECT_NAME> #create services with label name
+   app: <PROJECT_NAME>-rest #create services with label name
    commit-hash: "<VERSION>"
 spec:
   selector:
@@ -46,13 +46,14 @@ spec:
     port: 80
     targetPort: 8080
 
+---
 apiVersion: v1
 kind: Service
 metadata:
   name: <PROJECT_NAME>-grpc
   namespace: staging
   labels:
-   app: <PROJECT_NAME> #create services with label name
+   app: <PROJECT_NAME>-rest #create services with label name
    commit-hash: "<VERSION>"
 spec:
   selector:
