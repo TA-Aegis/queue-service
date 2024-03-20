@@ -6,8 +6,10 @@ stop:
 	docker compose stop
 down:
 	docker compose down
+	
 run:
 	go run application/*.go
+
 docker-build:
 	docker build -t ta-bc-dashboard .
 docker-run:
