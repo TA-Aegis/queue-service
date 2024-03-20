@@ -53,7 +53,7 @@ metadata:
   name: <PROJECT_NAME>-grpc
   namespace: staging
   labels:
-   app: <PROJECT_NAME>-rest #create services with label name
+   app: <PROJECT_NAME>-grpc #create services with label name
    commit-hash: "<VERSION>"
 spec:
   selector:
