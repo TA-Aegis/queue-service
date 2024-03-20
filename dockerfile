@@ -12,7 +12,7 @@ RUN go mod download
 RUN go mod tidy
 
 # Build the Go app
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o main application/rest/*.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o main application/*.go
 
 # Stage 2: Setup the runtime container
 FROM alpine:latest
