@@ -10,7 +10,7 @@ RUN go mod tidy
 
 RUN go mod download
 
-RUN go build -o binary application/rest/*.go
+RUN go build -o binary application/*.go
 
 EXPOSE 8080
 
