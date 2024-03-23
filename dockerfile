@@ -21,6 +21,7 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /app
 
 COPY --from=builder /app/binary .
+COPY --from=builder /app/files/migrations/migrate.sql ./files/migrations/migrate.sql
 COPY --from=builder /app/files/secrets/secrets.config.json ./files/secrets/secrets.config.json
 
 EXPOSE 8080
