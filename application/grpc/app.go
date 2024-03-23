@@ -1,8 +1,9 @@
 package grpc
 
 import (
-	"antrein/bc-dashboard/internal/pb"
 	"context"
+
+	pb "github.com/antrein/proto-repository/pb/bc"
 )
 
 type helloServer struct {

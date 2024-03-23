@@ -1,10 +1,11 @@
 package grpc
 
 import (
-	"antrein/bc-dashboard/internal/pb"
 	"antrein/bc-dashboard/model/config"
 	"fmt"
 	"net"
+
+	pb "github.com/antrein/proto-repository/pb/bc"
 
 	"google.golang.org/grpc"
 )
