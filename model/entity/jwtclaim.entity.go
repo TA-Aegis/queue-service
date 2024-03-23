@@ -2,8 +2,7 @@ package entity
 
 import "github.com/golang-jwt/jwt/v5"
 
-type CustomClaim struct {
-	TeamID string `json:"team_id"`
+type JWTClaim struct {
 	UserID string `json:"user_id"`
 	jwt.RegisteredClaims
 }

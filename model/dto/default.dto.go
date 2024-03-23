@@ -1,19 +1,21 @@
 package dto
 
-type DefaultDTOResponseWrapper struct {
+type ErrorResponse struct {
+	Status int    `json:"status"`
+	Error  string `json:"error"`
+}
+
+type DefaultResponse struct {
 	Status  int         `json:"status"`
-	Message string      `json:"msg"`
-	Body    interface{} `json:"data"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
+	Error   string      `json:"error,omitempty"`
 }
 
-type NoBodyDTOResponseWrapper struct {
-	Status  int    `json:"status"`
-	Message string `json:"msg"`
-}
-
-type PaginationDTOWrapper struct {
-	PageSize  int         `json:"page_size"`
-	Page      int         `json:"page"`
-	TotalPage int         `json:"total_page"`
-	Data      interface{} `json:"page_data"`
+type PaginationResponse struct {
+	PageSize    int         `json:"pageSize"`
+	Page        int         `json:"page"`
+	TotalRecord int         `json:"totalRecord"`
+	TotalPage   int         `json:"totalPage"`
+	Data        interface{} `json:"data"`
 }

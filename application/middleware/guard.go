@@ -4,63 +4,129 @@ import (
 	"antrein/bc-dashboard/model/config"
 	"antrein/bc-dashboard/model/dto"
 	"antrein/bc-dashboard/model/entity"
+	"fmt"
 	"net/http"
 
-	"github.com/gofiber/fiber/v3"
+	jwtware "github.com/gofiber/contrib/jwt"
+
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type GuardContext struct {
-	FiberCtx fiber.Ctx
+	FiberCtx *fiber.Ctx
 }
 
 type AuthGuardContext struct {
-	FiberCtx fiber.Ctx
-	Claims   entity.CustomClaim
+	FiberCtx *fiber.Ctx
+	Claims   entity.JWTClaim
+}
+
+var statusErrorMap = map[int]string{
+	400: "Bad Request",
+	401: "Unauthorized",
+	403: "Forbidden",
+	404: "Not Found",
+	500: "Internal Server Error",
+	503: "Service Unavailable",
 }
 
 func (g *GuardContext) ReturnError(
 	status int,
-	message string,
+	err string,
+	detail ...any,
 ) error {
-	return g.FiberCtx.Status(status).JSON(dto.NoBodyDTOResponseWrapper{
+	if status == http.StatusInternalServerError {
+		fmt.Println("error", err)
+	}
+
+	response := dto.DefaultResponse{
 		Status:  status,
-		Message: message,
-	})
+		Message: statusErrorMap[status],
+		Error:   err,
+	}
+
+	if len(detail) > 0 {
+		response.Data = detail[0]
+	}
+
+	return g.FiberCtx.Status(status).JSON(response)
 }
 
 func (g *GuardContext) ReturnSuccess(
-	body interface{},
+	data interface{},
 ) error {
-	return g.FiberCtx.Status(http.StatusOK).JSON(dto.DefaultDTOResponseWrapper{
+	return g.FiberCtx.Status(http.StatusOK).JSON(dto.DefaultResponse{
 		Status:  http.StatusOK,
-		Message: "ok",
-		Body:    body,
+		Message: "OK",
+		Data:    data,
 	})
+}
+
+func (g *GuardContext) ReturnCreated(
+	data interface{},
+) error {
+	return g.FiberCtx.Status(http.StatusCreated).JSON(dto.DefaultResponse{
+		Status:  http.StatusCreated,
+		Message: "Created",
+		Data:    data,
+	})
+}
+
+func (g *GuardContext) ReturnHTML(htmlContent string) error {
+	g.FiberCtx.Set("Content-Type", "text/html; charset=utf-8")
+	return g.FiberCtx.Status(http.StatusOK).SendString(htmlContent)
 }
 
 func (g *AuthGuardContext) ReturnError(
 	status int,
-	message string,
+	err string,
+	detail ...any,
 ) error {
-	return g.FiberCtx.Status(status).JSON(dto.NoBodyDTOResponseWrapper{
+	if status == http.StatusInternalServerError {
+		fmt.Println("error", err)
+	}
+
+	response := dto.DefaultResponse{
 		Status:  status,
-		Message: message,
-	})
+		Message: statusErrorMap[status],
+		Error:   err,
+	}
+
+	if len(detail) > 0 {
+		response.Data = detail[0]
+	}
+
+	return g.FiberCtx.Status(status).JSON(response)
 }
 
 func (g *AuthGuardContext) ReturnSuccess(
-	body interface{},
+	data interface{},
 ) error {
-	return g.FiberCtx.Status(http.StatusOK).JSON(dto.DefaultDTOResponseWrapper{
+	return g.FiberCtx.Status(http.StatusOK).JSON(dto.DefaultResponse{
 		Status:  http.StatusOK,
-		Message: "ok",
-		Body:    body,
+		Message: "OK",
+		Data:    data,
 	})
 }
 
+func (g *AuthGuardContext) ReturnCreated(
+	data interface{},
+) error {
+	return g.FiberCtx.Status(http.StatusCreated).JSON(dto.DefaultResponse{
+		Status:  http.StatusCreated,
+		Message: "Created",
+		Data:    data,
+	})
+}
+
+func (g *AuthGuardContext) ReturnHTML(htmlContent string) error {
+	g.FiberCtx.Set("Content-Type", "text/html; charset=utf-8")
+	return g.FiberCtx.Status(http.StatusOK).SendString(htmlContent)
+}
+
 func DefaultGuard(handlerFunc func(g *GuardContext) error) fiber.Handler {
-	return func(ctx fiber.Ctx) error {
+	return func(ctx *fiber.Ctx) error {
 		guardCtx := GuardContext{
 			FiberCtx: ctx,
 		}
@@ -70,42 +136,46 @@ func DefaultGuard(handlerFunc func(g *GuardContext) error) fiber.Handler {
 
 func AuthGuard(cfg *config.Config, handlerFunc func(g *AuthGuardContext) error) []fiber.Handler {
 	handlers := []fiber.Handler{
-		// jwtware.New(jwtware.Config{SigningKey: jwtware.SigningKey{
-		// 	Key: []byte(cfg.Secret.JWTSecret),
-		// }}),
-		func(ctx fiber.Ctx) error {
+		jwtware.New(jwtware.Config{
+			SigningKey: jwtware.SigningKey{
+				Key: []byte(cfg.Secrets.JWTSecret),
+			},
+			ErrorHandler: func(c *fiber.Ctx, err error) error {
+				return c.Status(fiber.StatusUnauthorized).JSON(dto.DefaultResponse{
+					Status:  http.StatusUnauthorized,
+					Message: statusErrorMap[http.StatusUnauthorized],
+					Error:   "Sesi anda telah berakhir",
+				})
+			},
+		}),
+		func(ctx *fiber.Ctx) error {
 			user := ctx.Locals("user").(*jwt.Token)
 			claims := user.Claims.(jwt.MapClaims)
 			expireAt, err := claims.GetExpirationTime()
 			if err != nil {
-				return ctx.Status(http.StatusUnauthorized).JSON(dto.NoBodyDTOResponseWrapper{
+				return ctx.Status(http.StatusUnauthorized).JSON(dto.DefaultResponse{
 					Status:  http.StatusUnauthorized,
-					Message: "unauthorized",
+					Message: statusErrorMap[http.StatusUnauthorized],
+					Error:   "Sesi anda telah berakhir",
 				})
 			}
 			issuedAt, err := claims.GetIssuedAt()
 			if err != nil {
-				return ctx.Status(http.StatusUnauthorized).JSON(dto.NoBodyDTOResponseWrapper{
+				return ctx.Status(http.StatusUnauthorized).JSON(dto.DefaultResponse{
 					Status:  http.StatusUnauthorized,
-					Message: "unauthorized",
-				})
-			}
-			teamID, ok := claims["team_id"].(string)
-			if !ok {
-				return ctx.Status(http.StatusUnauthorized).JSON(dto.NoBodyDTOResponseWrapper{
-					Status:  http.StatusUnauthorized,
-					Message: "unauthorized",
+					Message: statusErrorMap[http.StatusUnauthorized],
+					Error:   "Sesi anda telah berakhir",
 				})
 			}
 			userID, ok := claims["user_id"].(string)
 			if !ok {
-				return ctx.Status(http.StatusUnauthorized).JSON(dto.NoBodyDTOResponseWrapper{
+				return ctx.Status(http.StatusUnauthorized).JSON(dto.DefaultResponse{
 					Status:  http.StatusUnauthorized,
-					Message: "unauthorized",
+					Message: statusErrorMap[http.StatusUnauthorized],
+					Error:   "Sesi anda telah berakhir",
 				})
 			}
-			ety := entity.CustomClaim{
-				TeamID: teamID,
+			ety := entity.JWTClaim{
 				UserID: userID,
 				RegisteredClaims: jwt.RegisteredClaims{
 					ExpiresAt: expireAt,
@@ -117,53 +187,6 @@ func AuthGuard(cfg *config.Config, handlerFunc func(g *AuthGuardContext) error) 
 				Claims:   ety,
 			}
 			return handlerFunc(&authGuardCtx)
-		},
-	}
-	return handlers
-}
-
-func AdminGuard(cfg *config.Config, handlerFunc func(g *AuthGuardContext) error) []fiber.Handler {
-	handlers := []fiber.Handler{
-		// jwtware.New(jwtware.Config{SigningKey: jwtware.SigningKey{
-		// 	Key: []byte(cfg.Secret.AdminJWT),
-		// }}),
-		func(ctx fiber.Ctx) error {
-			user := ctx.Locals("user").(*jwt.Token)
-			claims := user.Claims.(jwt.MapClaims)
-			expireAt, err := claims.GetExpirationTime()
-			if err != nil {
-				return ctx.Status(http.StatusUnauthorized).JSON(dto.NoBodyDTOResponseWrapper{
-					Status:  http.StatusUnauthorized,
-					Message: "unauthorized",
-				})
-			}
-			issuedAt, err := claims.GetIssuedAt()
-			if err != nil {
-				return ctx.Status(http.StatusUnauthorized).JSON(dto.NoBodyDTOResponseWrapper{
-					Status:  http.StatusUnauthorized,
-					Message: "unauthorized",
-				})
-			}
-			userID, ok := claims["user_id"].(string)
-			if !ok {
-				return ctx.Status(http.StatusUnauthorized).JSON(dto.NoBodyDTOResponseWrapper{
-					Status:  http.StatusUnauthorized,
-					Message: "unauthorized",
-				})
-			}
-			ety := entity.CustomClaim{
-				TeamID: "",
-				UserID: userID,
-				RegisteredClaims: jwt.RegisteredClaims{
-					ExpiresAt: expireAt,
-					IssuedAt:  issuedAt,
-				},
-			}
-			adminGuardCtx := AuthGuardContext{
-				FiberCtx: ctx,
-				Claims:   ety,
-			}
-			return handlerFunc(&adminGuardCtx)
 		},
 	}
 	return handlers

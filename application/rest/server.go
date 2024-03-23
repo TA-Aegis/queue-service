@@ -4,7 +4,7 @@ import (
 	"antrein/bc-dashboard/model/config"
 	"fmt"
 
-	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v2"
 )
 
 func StartServer(cfg *config.Config, app *fiber.App) error {
