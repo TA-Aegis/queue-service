@@ -30,16 +30,29 @@ func (r *Repository) CreateNewTenant(ctx context.Context, req entity.Tenant) (*e
 }
 
 func (r *Repository) GetTenantByID(ctx context.Context, id string) (*entity.Tenant, error) {
-	tenant := &entity.Tenant{}
-	q := `SELECT * FROM tenants WHERE id = $1`
+	tenant := entity.Tenant{}
+	q := `SELECT * FROM tenants WHERE id = $1 LIMIT 1`
 	err := r.db.GetContext(ctx, &tenant, q, id)
-	return tenant, err
+	if err != nil {
+		return nil, err
+	}
+	return &tenant, err
+}
+
+func (r *Repository) GetTenantByEmail(ctx context.Context, email string) (*entity.Tenant, error) {
+	tenant := entity.Tenant{}
+	q := `SELECT * FROM tenants WHERE email = $1 LIMIT 1`
+	err := r.db.GetContext(ctx, &tenant, q, email)
+	if err != nil {
+		return nil, err
+	}
+	return &tenant, err
 }
 
 func (r *Repository) GetTenants(ctx context.Context, page int, pageSize int) ([]entity.Tenant, error) {
 	tenants := []entity.Tenant{}
 	q := `SELECT * FROM tenants ORDER BY name LIMIT $1 OFFSET $2`
 	offset := (page - 1) * pageSize
-	err := r.db.GetContext(ctx, &tenants, q, pageSize, offset)
+	err := r.db.SelectContext(ctx, &tenants, q, pageSize, offset)
 	return tenants, err
 }
