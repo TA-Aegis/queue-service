@@ -3,18 +3,17 @@ module antrein/bc-dashboard
 go 1.22.0
 
 require (
+	github.com/antrein/proto-repository v0.0.0-20240323110514-f9d66eb000e5
 	github.com/doug-martin/goqu/v9 v9.19.0
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/gofiber/fiber/v3 v3.0.0-20240317124620-5449b0410161
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/jmoiron/sqlx v1.3.5
 	google.golang.org/grpc v1.62.1
-	google.golang.org/protobuf v1.33.0
 )
 
 require (
 	github.com/andybalholm/brotli v1.1.0 // indirect
-	github.com/antrein/proto-repository v0.0.0-20240323110514-f9d66eb000e5 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
@@ -33,4 +32,5 @@ require (
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 )
