@@ -232,7 +232,6 @@ jobs:
           git config --global user.name ${GIT_USER}
           git clone https://github.com/antrein/prod-yml.git
           be_mode=$(echo "${{ env.PROJECT_NAME }}" | sed 's/-.*//')
-          mkdir ./prod-yml/${be_mode}
           cp "./k8s/${{ env.BRANCH }}.yml" "./prod-yml/${be_mode}/${{ env.PROJECT_NAME }}.yml"
           cd ./prod-yml
           git add .
