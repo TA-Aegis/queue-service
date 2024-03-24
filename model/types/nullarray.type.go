@@ -1,4 +1,4 @@
-package entity
+package types
 
 import (
 	"antrein/bc-dashboard/internal/utils/parser"

@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS configurations (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id VARCHAR(75) NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
     threshold INTEGER DEFAULT 0,
+    session_time INTEGER DEFAULT 5,
     host VARCHAR(155),
     base_url VARCHAR(155),
     max_users_in_queue INTEGER DEFAULT 0,

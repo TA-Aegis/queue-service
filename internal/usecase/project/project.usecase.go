@@ -23,6 +23,7 @@ func New(cfg *config.Config, repo *project.Repository) *Usecase {
 		repo: repo,
 	}
 }
+
 func (u *Usecase) RegisterNewProject(ctx context.Context, req dto.CreateProjectRequest, tenantID string) (*dto.CreateProjectResponse, *dto.ErrorResponse) {
 	var errRes dto.ErrorResponse
 

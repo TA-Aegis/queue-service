@@ -46,7 +46,7 @@ func ApplicationDelegate(cfg *config.Config, uc *usecase.CommonUsecase, rsc *res
 	authRoute.RegisterRoute(app)
 
 	// project
-	projectRoute := project.New(cfg, uc.ProjectUsecase, rsc.Vld)
+	projectRoute := project.New(cfg, uc.ProjectUsecase, uc.ConfigUsecase, rsc.Vld)
 	projectRoute.RegisterRoute(app)
 
 	return app, nil
