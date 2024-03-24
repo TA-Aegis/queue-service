@@ -78,5 +78,5 @@ func (r *Router) LoginTenantAccount(g *guard.GuardContext) error {
 		return g.ReturnError(errRes.Status, errRes.Error)
 	}
 
-	return g.ReturnCreated(resp)
+	return g.ReturnSuccess(resp)
 }

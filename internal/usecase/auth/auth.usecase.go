@@ -111,7 +111,6 @@ func (u *Usecase) LoginTenantAccount(ctx context.Context, req dto.LoginRequest) 
 		}
 		return nil, &errRes
 	}
-	log.Println(tenant.Name)
 	err = bcrypt.CompareHashAndPassword([]byte(tenant.Password), []byte(req.Password))
 	if err != nil {
 		errRes = dto.ErrorResponse{

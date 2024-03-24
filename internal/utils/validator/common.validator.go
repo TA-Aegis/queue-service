@@ -39,3 +39,9 @@ func IsPersonName(input string) bool {
 func ContainsSpace(input string) bool {
 	return strings.Contains(input, " ")
 }
+
+func IsUsername(input string) bool {
+	usernameRegex := "^[a-z0-9_-]{5,}$"
+	regex := regexp.MustCompile(usernameRegex)
+	return regex.MatchString(input)
+}

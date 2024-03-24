@@ -4,6 +4,7 @@ import (
 	"antrein/bc-dashboard/application/common/resource"
 	"antrein/bc-dashboard/application/common/usecase"
 	"antrein/bc-dashboard/internal/router/rest/auth"
+	"antrein/bc-dashboard/internal/router/rest/project"
 	"antrein/bc-dashboard/model/config"
 
 	"github.com/gofiber/fiber/v2"
@@ -43,6 +44,10 @@ func ApplicationDelegate(cfg *config.Config, uc *usecase.CommonUsecase, rsc *res
 	// auth
 	authRoute := auth.New(cfg, uc.AuthUsecase, rsc.Vld)
 	authRoute.RegisterRoute(app)
+
+	// project
+	projectRoute := project.New(cfg, uc.ProjectUsecase, rsc.Vld)
+	projectRoute.RegisterRoute(app)
 
 	return app, nil
 }

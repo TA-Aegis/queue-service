@@ -172,7 +172,7 @@ func AuthGuard(cfg *config.Config, handlerFunc func(g *AuthGuardContext) error) 
 				return ctx.Status(http.StatusUnauthorized).JSON(dto.DefaultResponse{
 					Status:  http.StatusUnauthorized,
 					Message: statusErrorMap[http.StatusUnauthorized],
-					Error:   "Sesi anda telah berakhir",
+					Error:   "Tidak terautentikasi",
 				})
 			}
 			ety := entity.JWTClaim{
