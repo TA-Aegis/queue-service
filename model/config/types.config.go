@@ -5,6 +5,7 @@ type Config struct {
 	Database DatabaseConfig `json:"database"`
 	Secrets  SecretConfig   `json:"secrets"`
 	Stage    string         `json:"stage"`
+	Infra    InfraConfig    `json:"infra"`
 	SMTP     SMTPConfig     `json:"smtp"`
 }
 
@@ -43,4 +44,9 @@ type SMTPConfig struct {
 	Port     string `json:"port"`
 	User     string `json:"user"`
 	Password string `json:"password"`
+}
+
+type InfraConfig struct {
+	Mode       string `json:"mode"`
+	ManagerURL string `json:"manager_url"`
 }

@@ -4,6 +4,8 @@ import (
 	"antrein/bc-dashboard/model/config"
 	"antrein/bc-dashboard/model/entity"
 	"context"
+	"database/sql"
+	"net/http"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -21,9 +23,42 @@ func New(cfg *config.Config, db *sqlx.DB) *Repository {
 }
 
 func (r *Repository) CreateNewProject(ctx context.Context, req entity.Project) (*entity.Project, error) {
+	tx, err := r.db.BeginTxx(ctx, &sql.TxOptions{
+		Isolation: 2,
+		ReadOnly:  false,
+	})
 	project := req
-	q := `INSERT INTO projects (id, name, tenant_id, created_at) VALUES ($1, $2, $3, $4)`
-	_, err := r.db.ExecContext(ctx, q, req.ID, req.Name, req.TenantID, req.CreatedAt)
+	q1 := `INSERT INTO projects (id, name, tenant_id, created_at) VALUES ($1, $2, $3, $4)`
+	_, err = tx.ExecContext(ctx, q1, req.ID, req.Name, req.TenantID, req.CreatedAt)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	q2 := `INSERT INTO configurations (project_id) VALUES ($1)`
+	_, err = tx.ExecContext(ctx, q2, req.ID)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	if r.cfg.Infra.Mode == "multi_tenant" {
+		client := &http.Client{}
+
+		req, err := http.NewRequest("POST", r.cfg.Infra.ManagerURL+"/kube/project/"+req.ID, nil)
+		req.Header.Set("Content-Type", "application/json")
+		_, err = client.Do(req)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	return &project, err
 }
 
