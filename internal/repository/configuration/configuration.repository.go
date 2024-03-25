@@ -20,6 +20,16 @@ func New(cfg *config.Config, db *sqlx.DB) *Repository {
 	}
 }
 
+func (r *Repository) GetConfigByProjectID(ctx context.Context, projectID string) (*entity.Configuration, error) {
+	config := entity.Configuration{}
+	q := `SELECT * FROM configurations WHERE project_id = $1 LIMIT 1`
+	err := r.db.GetContext(ctx, &config, q, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return &config, err
+}
+
 func (r *Repository) UpdateProjectConfig(ctx context.Context, req entity.Configuration) error {
 	q := `UPDATE configurations 
 		  SET threshold = $1, 

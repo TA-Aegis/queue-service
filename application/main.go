@@ -38,7 +38,11 @@ func main() {
 
 	// Start gRPC server concurrently
 	go func() {
-		if err := grpc.StartServer(cfg); err != nil {
+		grpc_app, err := grpc.ApplicationDelegate(cfg, uc, resource)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := grpc.StartServer(cfg, grpc_app); err != nil {
 			log.Fatal(err)
 		}
 	}()
@@ -46,5 +50,4 @@ func main() {
 	if err = rest.StartServer(cfg, rest_app); err != nil {
 		log.Fatal(err)
 	}
-
 }

@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS configurations (
     pages_to_apply VARCHAR(155)[],
     queue_start TIMESTAMP,
     queue_end TIMESTAMP,
-    queue_page_style style,
+    queue_page_style style DEFAULT 'base',
     queue_html_page VARCHAR(155),
     queue_page_base_color VARCHAR(10),
     queue_page_title VARCHAR(155),

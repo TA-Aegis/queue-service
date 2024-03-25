@@ -3,8 +3,8 @@ package rest
 import (
 	"antrein/bc-dashboard/application/common/resource"
 	"antrein/bc-dashboard/application/common/usecase"
-	"antrein/bc-dashboard/internal/router/rest/auth"
-	"antrein/bc-dashboard/internal/router/rest/project"
+	"antrein/bc-dashboard/internal/handler/rest/auth"
+	"antrein/bc-dashboard/internal/handler/rest/project"
 	"antrein/bc-dashboard/model/config"
 
 	"github.com/gofiber/fiber/v2"
