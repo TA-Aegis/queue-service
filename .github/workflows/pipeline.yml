@@ -234,9 +234,13 @@ jobs:
           be_mode=$(echo "${{ env.PROJECT_NAME }}" | sed 's/-.*//')
           cp "./k8s/${{ env.BRANCH }}.yml" "./prod-yml/${be_mode}/${{ env.PROJECT_NAME }}.yml"
           cd ./prod-yml
-          git add .
-          git commit -m "Update Kubernetes YAML file"
-          git push "https://${GIT_USER}:${GIT_TOKEN}@github.com/antrein/prod-yml.git"
+          if ! git diff --quiet || ! git diff --staged --quiet; then
+              git commit -am 'sync version'
+              # Push changes only if commit was successful
+              git push https://${GIT_USER}:${GIT_TOKEN}@github.com/antrein/prod-yml.git
+          else
+              echo "No changes to commit."
+          fi
 
 
   deploy-to-server-gcp:
