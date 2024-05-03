@@ -5,7 +5,6 @@ import (
 	"antrein/bc-dashboard/model/entity"
 	"context"
 	"database/sql"
-	"net/http"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -40,18 +39,6 @@ func (r *Repository) CreateNewProject(ctx context.Context, req entity.Project) (
 	if err != nil {
 		tx.Rollback()
 		return nil, err
-	}
-
-	if r.cfg.Infra.Mode == "multi_tenant" {
-		client := &http.Client{}
-
-		req, err := http.NewRequest("POST", r.cfg.Infra.ManagerURL+"/kube/project/"+req.ID, nil)
-		req.Header.Set("Content-Type", "application/json")
-		_, err = client.Do(req)
-		if err != nil {
-			tx.Rollback()
-			return nil, err
-		}
 	}
 
 	err = tx.Commit()

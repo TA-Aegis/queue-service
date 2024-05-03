@@ -1,22 +1,28 @@
 package configuration
 
 import (
+	"antrein/bc-dashboard/internal/repository/infra"
+	"antrein/bc-dashboard/internal/utils/checker"
 	"antrein/bc-dashboard/model/config"
 	"antrein/bc-dashboard/model/entity"
 	"context"
+	"database/sql"
+	"net/http"
 
 	"github.com/jmoiron/sqlx"
 )
 
 type Repository struct {
-	cfg *config.Config
-	db  *sqlx.DB
+	cfg       *config.Config
+	db        *sqlx.DB
+	infraRepo *infra.Repository
 }
 
-func New(cfg *config.Config, db *sqlx.DB) *Repository {
+func New(cfg *config.Config, db *sqlx.DB, infraRepo *infra.Repository) *Repository {
 	return &Repository{
-		cfg: cfg,
-		db:  db,
+		cfg:       cfg,
+		db:        db,
+		infraRepo: infraRepo,
 	}
 }
 
@@ -31,6 +37,10 @@ func (r *Repository) GetConfigByProjectID(ctx context.Context, projectID string)
 }
 
 func (r *Repository) UpdateProjectConfig(ctx context.Context, req entity.Configuration) error {
+	tx, err := r.db.BeginTxx(ctx, &sql.TxOptions{
+		Isolation: 1,
+		ReadOnly:  false,
+	})
 	q := `UPDATE configurations 
 		  SET threshold = $1, 
 		  session_time = $2, 
@@ -42,7 +52,39 @@ func (r *Repository) UpdateProjectConfig(ctx context.Context, req entity.Configu
 		  is_configure = $8,
 		  updated_at = now()
 		  WHERE project_id = $9`
-	_, err := r.db.ExecContext(ctx, q, req.Threshold, req.SessionTime, req.Host, req.BaseURL, req.MaxUsersInQueue, req.PagesToApply, req.QueueStart, req.QueueEnd, true, req.ProjectID)
+	_, err = tx.ExecContext(ctx, q, req.Threshold, req.SessionTime, req.Host, req.BaseURL, req.MaxUsersInQueue, req.QueueStart, req.QueueEnd, true, req.ProjectID)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	client := &http.Client{}
+	projects, err := r.infraRepo.GetInfraProjects(client)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if checker.Contains(projects, req.ProjectID) {
+		err := r.infraRepo.DeleteInfraProject(client, req.ProjectID)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	err = r.infraRepo.CreateInfraProject(client, infra.InfraBody{
+		ProjectID:     req.ProjectID,
+		ProjectDomain: req.Host.String,
+		URLPath:       req.BaseURL.String,
+	})
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	return err
 }
 
