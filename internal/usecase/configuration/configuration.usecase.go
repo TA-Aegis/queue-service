@@ -22,7 +22,7 @@ func New(cfg *config.Config, repo *configuration.Repository) *Usecase {
 	}
 }
 
-func (u *Usecase) GetProjectConfig(ctx context.Context, projectID string) (*dto.ProjectConfig, *dto.ErrorResponse) {
+func (u *Usecase) GetProjectConfigByID(ctx context.Context, projectID string) (*dto.ProjectConfig, *dto.ErrorResponse) {
 	var errRes dto.ErrorResponse
 
 	config, err := u.repo.GetConfigByProjectID(ctx, projectID)
@@ -31,6 +31,42 @@ func (u *Usecase) GetProjectConfig(ctx context.Context, projectID string) (*dto.
 			errRes = dto.ErrorResponse{
 				Status: 404,
 				Error:  "Project dengan id tersebut tidak ditemukan",
+			}
+			return nil, &errRes
+		}
+		log.Println(err)
+		errRes = dto.ErrorResponse{
+			Status: 500,
+			Error:  "Gagal mendapatkan konfigurasi project",
+		}
+		return nil, &errRes
+	}
+	return &dto.ProjectConfig{
+		ProjectID:          config.ProjectID,
+		Threshold:          config.Threshold,
+		SessionTime:        config.SessionTime,
+		Host:               config.Host.String,
+		BaseURL:            config.BaseURL.String,
+		MaxUsersInQueue:    config.MaxUsersInQueue,
+		QueueStart:         config.QueueStart.Time,
+		QueueEnd:           config.QueueEnd.Time,
+		QueuePageStyle:     config.QueuePageStyle,
+		QueueHTMLPage:      config.QueueHTMLPage.String,
+		QueuePageBaseColor: config.QueuePageBaseColor.String,
+		QueuePageTitle:     config.QueuePageTitle.String,
+		QueuePageLogo:      config.QueuePageLogo.String,
+	}, nil
+}
+
+func (u *Usecase) GetProjectConfigByHost(ctx context.Context, host string) (*dto.ProjectConfig, *dto.ErrorResponse) {
+	var errRes dto.ErrorResponse
+
+	config, err := u.repo.GetConfigByHost(ctx, host)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			errRes = dto.ErrorResponse{
+				Status: 404,
+				Error:  "Project dengan host tersebut tidak ditemukan",
 			}
 			return nil, &errRes
 		}
