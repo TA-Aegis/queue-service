@@ -3,7 +3,7 @@ module antrein/bc-dashboard
 go 1.22.0
 
 require (
-	github.com/antrein/proto-repository v0.0.3
+	github.com/antrein/proto-repository v0.0.4
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/gofiber/contrib/jwt v1.0.8
 	github.com/gofiber/fiber/v2 v2.52.2

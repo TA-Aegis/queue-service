@@ -21,13 +21,13 @@ func New(usecase *configuration.Usecase) *Server {
 }
 
 func (s *Server) GetProjectConfig(ctx context.Context, in *pb.ConfigRequest) (*pb.ProjectConfigResponse, error) {
-	host := in.GetHost()
-	resp, err := s.usecase.GetProjectConfigByHost(ctx, host)
+	projectID := in.GetProjectId()
+	resp, err := s.usecase.GetProjectConfigByID(ctx, projectID)
 	if err != nil {
 		return nil, errors.New(err.Error)
 	}
 	return &pb.ProjectConfigResponse{
-		ProjectId:       resp.ProjectID,
+		ProjectId:       projectID,
 		Threshold:       int32(resp.Threshold),
 		SessionTime:     int32(resp.SessionTime),
 		Host:            resp.Host,

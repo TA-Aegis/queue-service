@@ -2,7 +2,6 @@ package configuration
 
 import (
 	"antrein/bc-dashboard/internal/repository/infra"
-	"antrein/bc-dashboard/internal/utils/checker"
 	"antrein/bc-dashboard/model/config"
 	"antrein/bc-dashboard/model/entity"
 	"context"
@@ -70,19 +69,6 @@ func (r *Repository) UpdateProjectConfig(ctx context.Context, req entity.Configu
 	}
 
 	client := &http.Client{}
-	projects, err := r.infraRepo.GetInfraProjects(client)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	if checker.Contains(projects, req.ProjectID) {
-		err := r.infraRepo.DeleteInfraProject(client, req.ProjectID)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
 
 	err = r.infraRepo.CreateInfraProject(client, infra.InfraBody{
 		ProjectID:     req.ProjectID,
