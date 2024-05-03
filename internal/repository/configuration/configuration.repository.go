@@ -37,12 +37,11 @@ func (r *Repository) UpdateProjectConfig(ctx context.Context, req entity.Configu
 		  host = $3, 
 		  base_url = $4,
 		  max_users_in_queue = $5,
-		  pages_to_apply = $6,
-		  queue_start = $7,
-		  queue_end = $8,
-		  is_configure = $9,
+		  queue_start = $6,
+		  queue_end = $7,
+		  is_configure = $8,
 		  updated_at = now()
-		  WHERE project_id = $10`
+		  WHERE project_id = $9`
 	_, err := r.db.ExecContext(ctx, q, req.Threshold, req.SessionTime, req.Host, req.BaseURL, req.MaxUsersInQueue, req.PagesToApply, req.QueueStart, req.QueueEnd, true, req.ProjectID)
 	return err
 }

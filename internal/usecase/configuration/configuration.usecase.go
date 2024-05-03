@@ -5,7 +5,6 @@ import (
 	"antrein/bc-dashboard/model/config"
 	"antrein/bc-dashboard/model/dto"
 	"antrein/bc-dashboard/model/entity"
-	"antrein/bc-dashboard/model/types"
 	"context"
 	"database/sql"
 	"log"
@@ -49,7 +48,6 @@ func (u *Usecase) GetProjectConfig(ctx context.Context, projectID string) (*dto.
 		Host:               config.Host.String,
 		BaseURL:            config.BaseURL.String,
 		MaxUsersInQueue:    config.MaxUsersInQueue,
-		PagesToApply:       config.PagesToApply.StringArray,
 		QueueStart:         config.QueueStart.Time,
 		QueueEnd:           config.QueueEnd.Time,
 		QueuePageStyle:     config.QueuePageStyle,
@@ -76,10 +74,6 @@ func (u *Usecase) UpdateProjectConfig(ctx context.Context, req dto.UpdateProject
 			String: req.BaseURL,
 		},
 		MaxUsersInQueue: req.MaxUsersInQueue,
-		PagesToApply: types.NullStringArray{
-			Valid:       true,
-			StringArray: req.PagesToApply,
-		},
 		QueueStart: sql.NullTime{
 			Valid: true,
 			Time:  req.QueueStart,

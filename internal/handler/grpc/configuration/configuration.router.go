@@ -33,7 +33,6 @@ func (s *Server) GetProjectConfig(ctx context.Context, in *pb.ConfigRequest) (*p
 		Host:            resp.Host,
 		BaseUrl:         resp.BaseURL,
 		MaxUsersInQueue: int32(resp.MaxUsersInQueue),
-		PagesToApply:    resp.PagesToApply,
 		QueueStart:      timestamppb.New(resp.QueueStart),
 		QueueEnd:        timestamppb.New(resp.QueueEnd),
 		QueuePageStyle:  resp.QueuePageStyle,

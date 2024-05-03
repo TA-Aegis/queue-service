@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS configurations (
     host VARCHAR(155),
     base_url VARCHAR(155),
     max_users_in_queue INTEGER DEFAULT 0,
-    pages_to_apply VARCHAR(155)[],
     queue_start TIMESTAMP,
     queue_end TIMESTAMP,
     queue_page_style style DEFAULT 'base',

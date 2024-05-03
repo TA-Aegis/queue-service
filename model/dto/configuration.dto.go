@@ -9,7 +9,6 @@ type ProjectConfig struct {
 	Host               string    `json:"host"`
 	BaseURL            string    `json:"base_url"`
 	MaxUsersInQueue    int       `json:"max_users_in_queue"`
-	PagesToApply       []string  `json:"pages_to_apply"`
 	QueueStart         time.Time `json:"queue_start"`
 	QueueEnd           time.Time `json:"queue_end"`
 	QueuePageStyle     string    `json:"queue_page_style"`
@@ -27,7 +26,6 @@ type UpdateProjectConfig struct {
 	Host            string    `json:"host"`
 	BaseURL         string    `json:"base_url"`
 	MaxUsersInQueue int       `json:"max_users_in_queue"`
-	PagesToApply    []string  `json:"pages_to_apply"`
 	QueueStart      time.Time `json:"queue_start"`
 	QueueEnd        time.Time `json:"queue_end"`
 }
