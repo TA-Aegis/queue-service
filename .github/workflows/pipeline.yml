@@ -32,6 +32,7 @@ jobs:
       IMAGE_TAG: ${{ steps.set-env.outputs.IMAGE_TAG }}
       IMAGE_NAME: ${{ steps.set-env.outputs.IMAGE_NAME }}
       SHORT_SHA: ${{ steps.set-env.outputs.SHORT_SHA }}
+      BRANCH: ${{ env.PROJECT_NAME }}
     steps:
       - name: Set environment variables
         id: set-env
@@ -45,7 +46,7 @@ jobs:
 
   dockerize-and-push:
     needs: setup-environment
-    environment: ${{ env.PROJECT_NAME }}
+    environment: ${{ needs.setup-environment.outputs.BRANCH }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo
@@ -77,7 +78,7 @@ jobs:
     needs: dockerize-and-push
     if: vars.CLOUD_PLATFORM == 'gcp'
     runs-on: ubuntu-latest
-    environment: ${{ env.PROJECT_NAME }}
+    environment: ${{ needs.setup-environment.outputs.BRANCH }}
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v2
@@ -128,7 +129,7 @@ jobs:
     needs: dockerize-and-push
     if: vars.CLOUD_PLATFORM == 'aws'
     runs-on: ubuntu-latest
-    environment: ${{ env.PROJECT_NAME }}
+    environment: ${{ needs.setup-environment.outputs.BRANCH }}
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v2
@@ -179,7 +180,7 @@ jobs:
     needs: dockerize-and-push
     if: vars.CLOUD_PLATFORM == 'azure'
     runs-on: ubuntu-latest
-    environment: ${{ env.PROJECT_NAME }}
+    environment: ${{ needs.setup-environment.outputs.BRANCH }}
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v2
