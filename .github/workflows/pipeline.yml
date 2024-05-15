@@ -42,10 +42,10 @@ jobs:
           BRANCH=$(if [ "$BRANCH_NAME" = "staging" ]; then echo "staging"; else echo "production"; fi)
           IMAGE_TAG="$BRANCH:$SHORT_SHA"
           IMAGE_NAME="reyshazni/${{ github.event.repository.name }}-$IMAGE_TAG"
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "BRANCH=$BRANCH" >> $GITHUB_OUTPUT
-          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_OUTPUT
-          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
+          echo "::set-output name=IMAGE_TAG::$IMAGE_TAG"
+          echo "::set-output name=BRANCH::$BRANCH"
+          echo "::set-output name=SHORT_SHA::$SHORT_SHA"
+          echo "::set-output name=IMAGE_NAME::$IMAGE_NAME"
 
   dockerize-and-push:
     needs: setup-environment
@@ -75,7 +75,7 @@ jobs:
         run: |
           docker build -t $IMAGE_NAME .
           docker push $IMAGE_NAME
-          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
+          echo "::set-output name=IMAGE_NAME::$IMAGE_NAME"
 
   deploy-to-server-gcp:
     needs: dockerize-and-push
@@ -90,13 +90,12 @@ jobs:
         env: 
           IMAGE_NAME: ${{ needs.setup-environment.outputs.IMAGE_NAME }}
           SHORT_SHA: ${{ needs.setup-environment.outputs.SHORT_SHA }}
-          BRANCH: ${{ needs.setup-environment.outputs.BRANCH }}
         run: |
-          sed -i "s|<PROJECT_NAME>|${{ env.PROJECT_NAME }}|g" k8s/${{ env.BRANCH }}.yml
-          sed -i "s|<IMAGE_NAME>|${{ env.IMAGE_NAME }}|g" k8s/${{ env.BRANCH }}.yml
-          sed -i "s|<VERSION>|${{ env.SHORT_SHA }}|g" k8s/${{ env.BRANCH }}.yml
-          sed -i "s|<PORT>|${{ env.PORT }}|g" k8s/${{ env.BRANCH }}.yml
-          cat k8s/${{ env.BRANCH }}.yml
+          sed -i "s|<PROJECT_NAME>|${{ env.PROJECT_NAME }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          sed -i "s|<IMAGE_NAME>|${{ env.IMAGE_NAME }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          sed -i "s|<VERSION>|${{ env.SHORT_SHA }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          sed -i "s|<PORT>|${{ env.PORT }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          cat k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
 
       - id: auth
         uses: google-github-actions/auth@v2
