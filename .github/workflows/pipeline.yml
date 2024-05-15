@@ -38,7 +38,7 @@ jobs:
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           BRANCH_NAME=$(echo "${{ github.ref }}" | sed -e "s/refs\/heads\///g")
           BRANCH=$(if [ "$BRANCH_NAME" = "staging" ]; then echo "staging"; else echo "production"; fi)
-          IMAGE_TAG="$BRANCH:$SHORT_SHA"
+          IMAGE_TAG="$BRANCH-$SHORT_SHA"
           echo "::set-output name=IMAGE_TAG::$IMAGE_TAG"
           echo "::set-output name=BRANCH::$BRANCH"
 
