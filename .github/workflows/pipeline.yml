@@ -42,10 +42,10 @@ jobs:
           BRANCH=$(if [ "$BRANCH_NAME" = "staging" ]; then echo "staging"; else echo "production"; fi)
           IMAGE_TAG="$BRANCH:$SHORT_SHA"
           IMAGE_NAME="reyshazni/${{ github.event.repository.name }}-$IMAGE_TAG"
-          echo "::set-output name=IMAGE_TAG::$IMAGE_TAG"
-          echo "::set-output name=BRANCH::$BRANCH"
-          echo "::set-output name=SHORT_SHA::$SHORT_SHA"
-          echo "::set-output name=IMAGE_NAME::$IMAGE_NAME"
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "BRANCH=$BRANCH" >> $GITHUB_OUTPUT
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
 
   dockerize-and-push:
     needs: setup-environment
@@ -75,7 +75,7 @@ jobs:
         run: |
           docker build -t $IMAGE_NAME .
           docker push $IMAGE_NAME
-          echo "::set-output name=IMAGE_NAME::$IMAGE_NAME"
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
 
   deploy-to-server-gcp:
     needs: dockerize-and-push
