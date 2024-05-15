@@ -32,7 +32,7 @@ jobs:
       IMAGE_TAG: ${{ steps.set-env.outputs.IMAGE_TAG }}
       IMAGE_NAME: ${{ steps.set-env.outputs.IMAGE_NAME }}
       SHORT_SHA: ${{ steps.set-env.outputs.SHORT_SHA }}
-      BRANCH: ${{ env.BRANCH }}
+      BRANCH: ${{ steps.set-env.outputs.BRANCH }}
     steps:
       - name: Set environment variables
         id: set-env
@@ -40,9 +40,11 @@ jobs:
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           IMAGE_TAG="${{ env.PROJECT_NAME }}:$SHORT_SHA"
           IMAGE_NAME="reyshazni/${{ github.event.repository.name }}-$IMAGE_TAG"
+          BRANCH="${{ env.BRANCH }}"
           echo "::set-output name=IMAGE_TAG::$IMAGE_TAG"
           echo "::set-output name=SHORT_SHA::$SHORT_SHA"
           echo "::set-output name=IMAGE_NAME::$IMAGE_NAME"
+          echo "::set-output name=BRANCH::$BRANCH"
 
   dockerize-and-push:
     needs: setup-environment
