@@ -30,7 +30,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       IMAGE_TAG: ${{ steps.set-env.outputs.IMAGE_TAG }}
+      IMAGE_NAME: ${{ steps.set-env.outputs.IMAGE_NAME }}
       BRANCH: ${{ steps.set-env.outputs.BRANCH }}
+      SHORT_SHA: ${{ steps.set-env.outputs.SHORT_SHA }}
     steps:
       - name: Set environment variables
         id: set-env
@@ -38,9 +40,12 @@ jobs:
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           BRANCH_NAME=$(echo "${{ github.ref }}" | sed -e "s/refs\/heads\///g")
           BRANCH=$(if [ "$BRANCH_NAME" = "staging" ]; then echo "staging"; else echo "production"; fi)
-          IMAGE_TAG="$BRANCH-$SHORT_SHA"
+          IMAGE_TAG="$BRANCH:$SHORT_SHA"
+          IMAGE_NAME="reyshazni/${{ github.event.repository.name }}-$IMAGE_TAG"
           echo "::set-output name=IMAGE_TAG::$IMAGE_TAG"
           echo "::set-output name=BRANCH::$BRANCH"
+          echo "::set-output name=SHORT_SHA::$SHORT_SHA"
+          echo "::set-output name=IMAGE_NAME::$IMAGE_NAME"
 
   dockerize-and-push:
     needs: setup-environment
@@ -85,21 +90,21 @@ jobs:
     needs: dockerize-and-push
     if: vars.CLOUD_PLATFORM == 'gcp'
     runs-on: ubuntu-latest
-    environment: ${{ needs.dockerize-and-push.outputs.BRANCH }}
+    environment: ${{ needs.setup-environment.outputs.BRANCH }}
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v2
 
       - name: Prepare deployment file
         env: 
-          IMAGE_NAME: ${{ needs.dockerize-and-push.outputs.IMAGE_NAME }}
-          SHORT_SHA: $(echo "$IMAGE_NAME" | cut -d':' -f2)
+          IMAGE_NAME: ${{ needs.setup-environment.outputs.IMAGE_NAME }}
+          SHORT_SHA: ${{ needs.setup-environment.outputs.SHORT_SHA }}
         run: |
-          sed -i "s|<PROJECT_NAME>|${{ env.PROJECT_NAME }}|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          sed -i "s|<IMAGE_NAME>|$IMAGE_NAME|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          sed -i "s|<VERSION>|$SHORT_SHA|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          sed -i "s|<PORT>|${{ env.PORT }}|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          cat k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
+          sed -i "s|<PROJECT_NAME>|${{ env.PROJECT_NAME }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          sed -i "s|<IMAGE_NAME>|${{ env.IMAGE_NAME }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          sed -i "s|<VERSION>|${{ env.SHORT_SHA }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          sed -i "s|<PORT>|${{ env.PORT }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          cat k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
 
       - id: auth
         uses: google-github-actions/auth@v2
@@ -114,7 +119,7 @@ jobs:
 
       - name: Deploy
         run: |
-          kubectl apply -f k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
+          kubectl apply -f k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
 
       - name: Push YAML to another GitHub repo
         if: github.ref != 'refs/heads/staging'
@@ -126,7 +131,7 @@ jobs:
           git config --global user.email ${GIT_EMAIL}
           git config --global user.name ${GIT_USER}
           git clone https://github.com/antrein/prod-yml.git
-          cp ./k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml ./prod-yml/${{ env.PROJECT_NAME }}.yml
+          cp ./k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml ./prod-yml/${{ env.PROJECT_NAME }}.yml
           cd ./prod-yml
           git add .
           git commit -m "Update Kubernetes YAML file"
@@ -136,21 +141,21 @@ jobs:
     needs: dockerize-and-push
     if: vars.CLOUD_PLATFORM == 'aws'
     runs-on: ubuntu-latest
-    environment: ${{ needs.dockerize-and-push.outputs.BRANCH }}
+    environment: ${{ needs.setup-environment.outputs.BRANCH }}
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v2
 
       - name: Prepare deployment file
         env: 
-          IMAGE_NAME: ${{ needs.dockerize-and-push.outputs.IMAGE_NAME }}
-          SHORT_SHA: $(echo "$IMAGE_NAME" | cut -d':' -f2)
+          IMAGE_NAME: ${{ needs.setup-environment.outputs.IMAGE_NAME }}
+          SHORT_SHA: ${{ needs.setup-environment.outputs.SHORT_SHA }}
         run: |
-          sed -i "s|<PROJECT_NAME>|${{ env.PROJECT_NAME }}|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          sed -i "s|<IMAGE_NAME>|$IMAGE_NAME|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          sed -i "s|<VERSION>|$SHORT_SHA|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          sed -i "s|<PORT>|${{ env.PORT }}|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          cat k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
+          sed -i "s|<PROJECT_NAME>|${{ env.PROJECT_NAME }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          sed -i "s|<IMAGE_NAME>|${{ env.IMAGE_NAME }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          sed -i "s|<VERSION>|${{ env.SHORT_SHA }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          sed -i "s|<PORT>|${{ env.PORT }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          cat k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -164,7 +169,7 @@ jobs:
 
       - name: Deploy to EKS
         run: |
-          kubectl apply -f k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
+          kubectl apply -f k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
 
       - name: Push YAML to another GitHub repo
         if: github.ref != 'refs/heads/staging'
@@ -176,7 +181,7 @@ jobs:
           git config --global user.email ${GIT_EMAIL}
           git config --global user.name ${GIT_USER}
           git clone https://github.com/antrein/prod-yml.git
-          cp ./k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml ./prod-yml/${{ env.PROJECT_NAME }}.yml
+          cp ./k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml ./prod-yml/${{ env.PROJECT_NAME }}.yml
           cd ./prod-yml
           git add .
           git commit -m "Update Kubernetes YAML file"
@@ -186,21 +191,21 @@ jobs:
     needs: dockerize-and-push
     if: vars.CLOUD_PLATFORM == 'azure'
     runs-on: ubuntu-latest
-    environment: ${{ needs.dockerize-and-push.outputs.BRANCH }}
+    environment: ${{ needs.setup-environment.outputs.BRANCH }}
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v2
 
       - name: Prepare deployment file
         env: 
-          IMAGE_NAME: ${{ needs.dockerize-and-push.outputs.IMAGE_NAME }}
-          SHORT_SHA: $(echo "$IMAGE_NAME" | cut -d':' -f2)
+          IMAGE_NAME: ${{ needs.setup-environment.outputs.IMAGE_NAME }}
+          SHORT_SHA: ${{ needs.setup-environment.outputs.SHORT_SHA }}
         run: |
-          sed -i "s|<PROJECT_NAME>|${{ env.PROJECT_NAME }}|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          sed -i "s|<IMAGE_NAME>|$IMAGE_NAME|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          sed -i "s|<VERSION>|$SHORT_SHA|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          sed -i "s|<PORT>|${{ env.PORT }}|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          cat k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
+          sed -i "s|<PROJECT_NAME>|${{ env.PROJECT_NAME }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          sed -i "s|<IMAGE_NAME>|${{ env.IMAGE_NAME }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          sed -i "s|<VERSION>|${{ env.SHORT_SHA }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          sed -i "s|<PORT>|${{ env.PORT }}|g" k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
+          cat k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml
 
       - name: Push YAML to another GitHub repo
         if: github.ref != 'refs/heads/staging'
@@ -212,7 +217,7 @@ jobs:
           git config --global user.email ${GIT_EMAIL}
           git config --global user.name ${GIT_USER}
           git clone https://github.com/antrein/prod-yml.git
-          cp ./k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml ./prod-yml/${{ env.PROJECT_NAME }}.yml
+          cp ./k8s/${{ needs.setup-environment.outputs.BRANCH }}.yml ./prod-yml/${{ env.PROJECT_NAME }}.yml
           cd ./prod-yml
           git add .
           git commit -m "Update Kubernetes YAML file"
