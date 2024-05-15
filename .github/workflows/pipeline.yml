@@ -81,57 +81,6 @@ jobs:
           docker push $IMAGE_NAME
           echo "::set-output name=IMAGE_NAME::$IMAGE_NAME"
 
-  deploy-to-server-do:
-    needs: dockerize-and-push
-    if: vars.CLOUD_PLATFORM == 'do'
-    runs-on: ubuntu-latest
-    environment: ${{ needs.dockerize-and-push.outputs.BRANCH }}
-    steps:
-      - name: Checkout the repo
-        uses: actions/checkout@v2
-
-      - name: Prepare deployment file
-        run: |
-          IMAGE_NAME=${{ needs.dockerize-and-push.outputs.IMAGE_NAME }}
-          SHORT_SHA=$(echo "$IMAGE_NAME" | cut -d':' -f2)
-          sed -i "s|<PROJECT_NAME>|${{ env.PROJECT_NAME }}|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          sed -i "s|<IMAGE_NAME>|$IMAGE_NAME|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          sed -i "s|<VERSION>|$SHORT_SHA|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          sed -i "s|<PORT>|${{ env.PORT }}|g" k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-          cat k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ vars.DO_PAK }}
-
-      - name: Connect to cluster
-        run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{ vars.DO_CLUSTER_NAME }}
-
-      - name: Deploy
-        run: |
-          kubectl apply -f k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml
-
-      - name: Push YAML to another GitHub repo
-        if: github.ref != 'refs/heads/staging'
-        env:
-          GIT_USER: reyshazni
-          GIT_TOKEN: ${{ vars.GIT_PAT }}
-          GIT_EMAIL: reyshazni@gmail.com
-        run: |
-          git config --global user.email ${GIT_EMAIL}
-          git config --global user.name ${GIT_USER}
-          git clone https://github.com/antrein/prod-yml.git
-          be_mode=$(echo "${{ env.PROJECT_NAME }}" | sed 's/-.*//')
-          cp "./k8s/${{ needs.dockerize-and-push.outputs.BRANCH }}.yml" "./prod-yml/${be_mode}/${{ env.PROJECT_NAME }}.yml"
-          cd ./prod-yml
-          if ! git diff --quiet || ! git diff --staged --quiet; then
-              git commit -am 'sync version'
-              git push https://${GIT_USER}:${GIT_TOKEN}@github.com/antrein/prod-yml.git
-          else
-              echo "No changes to commit."
-          fi
-
   deploy-to-server-gcp:
     needs: dockerize-and-push
     if: vars.CLOUD_PLATFORM == 'gcp'
