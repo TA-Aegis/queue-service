@@ -51,9 +51,6 @@ jobs:
     needs: setup-environment
     environment: ${{ needs.setup-environment.outputs.BRANCH }}
     runs-on: ubuntu-latest
-    outputs:
-      IMAGE_NAME: ${{ steps.build.outputs.IMAGE_NAME }}
-      BRANCH: ${{ steps.set-env.outputs.BRANCH }}
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v2
@@ -64,12 +61,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Set environment variables
-        id: set-env
-        run: |
-          echo "::set-output name=IMAGE_TAG::${{ needs.setup-environment.outputs.IMAGE_TAG }}"
-          echo "::set-output name=BRANCH::${{ needs.setup-environment.outputs.BRANCH }}"
-
       - name: Create secret
         run: |
           echo '${{ vars.ENV }}' > ./files/secrets/secrets.config.json
@@ -79,9 +70,9 @@ jobs:
           cat ./files/secrets/secrets.config.json
 
       - name: Build and push Docker Image
-        id: build
+        env: 
+          IMAGE_NAME: ${{ needs.setup-environment.outputs.IMAGE_NAME }}
         run: |
-          IMAGE_NAME="reyshazni/${{ github.event.repository.name }}:${{ needs.setup-environment.outputs.IMAGE_TAG }}"
           docker build -t $IMAGE_NAME .
           docker push $IMAGE_NAME
           echo "::set-output name=IMAGE_NAME::$IMAGE_NAME"
