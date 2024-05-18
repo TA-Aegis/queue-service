@@ -62,6 +62,11 @@ jobs:
         run: |
           echo '${{ vars.ENV }}' > ./files/secrets/secrets.config.json
 
+      - name: Add Config
+        run: |
+          jq '.be_mode="${{ vars.CONFIG_BE_MODE }}"' ./files/secrets/secrets.config.json
+          jq '.infra_mode="${{ vars.CONFIG_INFRA_MODE }}"' ./files/secrets/secrets.config.json
+
       - name: Test secret
         run: |
           cat ./files/secrets/secrets.config.json
