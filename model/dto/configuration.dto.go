@@ -20,14 +20,14 @@ type ProjectConfig struct {
 }
 
 type UpdateProjectConfig struct {
-	ProjectID       string    `json:"project_id"`
-	Threshold       int       `json:"threshold"`
-	SessionTime     int       `json:"session_time"`
-	Host            string    `json:"host"`
-	BaseURL         string    `json:"base_url"`
-	MaxUsersInQueue int       `json:"max_users_in_queue"`
-	QueueStart      time.Time `json:"queue_start"`
-	QueueEnd        time.Time `json:"queue_end"`
+	ProjectID       string `json:"project_id"`
+	Threshold       int    `json:"threshold"`
+	SessionTime     int    `json:"session_time"`
+	Host            string `json:"host"`
+	BaseURL         string `json:"base_url"`
+	MaxUsersInQueue int    `json:"max_users_in_queue"`
+	QueueStart      string `json:"queue_start"`
+	QueueEnd        string `json:"queue_end"`
 }
 
 type UpdateProjectStyle struct {

@@ -8,6 +8,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"time"
 )
 
 type Usecase struct {
@@ -97,6 +98,25 @@ func (u *Usecase) GetProjectConfigByHost(ctx context.Context, host string) (*dto
 func (u *Usecase) UpdateProjectConfig(ctx context.Context, req dto.UpdateProjectConfig) *dto.ErrorResponse {
 	var errRes dto.ErrorResponse
 
+	const layout = "2006-01-02T15:04:05"
+	queueStart, err := time.Parse(layout, req.QueueStart)
+	if err != nil {
+		errRes = dto.ErrorResponse{
+			Status: 400,
+			Error:  "Format waktu queue mulai salah",
+		}
+		return &errRes
+	}
+
+	queueEnd, err := time.Parse(layout, req.QueueEnd)
+	if err != nil {
+		errRes = dto.ErrorResponse{
+			Status: 400,
+			Error:  "Format waktu queue berakhir salah",
+		}
+		return &errRes
+	}
+
 	config := entity.Configuration{
 		ProjectID:   req.ProjectID,
 		Threshold:   req.Threshold,
@@ -112,15 +132,15 @@ func (u *Usecase) UpdateProjectConfig(ctx context.Context, req dto.UpdateProject
 		MaxUsersInQueue: req.MaxUsersInQueue,
 		QueueStart: sql.NullTime{
 			Valid: true,
-			Time:  req.QueueStart,
+			Time:  queueStart,
 		},
 		QueueEnd: sql.NullTime{
 			Valid: true,
-			Time:  req.QueueEnd,
+			Time:  queueEnd,
 		},
 	}
 
-	err := u.repo.UpdateProjectConfig(ctx, config)
+	err = u.repo.UpdateProjectConfig(ctx, config)
 	if err != nil {
 		log.Println("Error gagal mengupdate konfigurasi project", err)
 		if err == sql.ErrNoRows {
