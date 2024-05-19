@@ -6,6 +6,7 @@ import (
 	"antrein/bc-dashboard/model/entity"
 	"context"
 	"database/sql"
+	"errors"
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
@@ -61,11 +62,24 @@ func (r *Repository) UpdateProjectConfig(ctx context.Context, req entity.Configu
 		  is_configure = $8,
 		  updated_at = now()
 		  WHERE project_id = $9`
-	_, err = tx.ExecContext(ctx, q, req.Threshold, req.SessionTime, req.Host, req.BaseURL, req.MaxUsersInQueue, req.QueueStart, req.QueueEnd, true, req.ProjectID)
+
+	resp, err := tx.ExecContext(ctx, q, req.Threshold, req.SessionTime, req.Host, req.BaseURL, req.MaxUsersInQueue, req.QueueStart, req.QueueEnd, true, req.ProjectID)
 
 	if err != nil {
 		tx.Rollback()
 		return err
+	}
+
+	affected, err := resp.RowsAffected()
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if affected == 0 {
+		tx.Rollback()
+		return errors.New("Project tidak terdaftar")
 	}
 
 	client := &http.Client{}
@@ -81,7 +95,7 @@ func (r *Repository) UpdateProjectConfig(ctx context.Context, req entity.Configu
 		return err
 	}
 
-	return err
+	return tx.Commit()
 }
 
 func (r *Repository) UpdateProjectStyle(ctx context.Context, req entity.Configuration) error {
