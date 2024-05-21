@@ -88,6 +88,39 @@ func (u *Usecase) GetListProject(ctx context.Context, tenantID string) (*dto.Lis
 	}, nil
 }
 
+func (u *Usecase) GetProjectDetail(ctx context.Context, projectID, tenantID string) (*dto.ProjectDetailResponse, *dto.ErrorResponse) {
+	var errRes dto.ErrorResponse
+	project, err := u.repo.GetTenantProjectByID(ctx, projectID, tenantID)
+	if err != nil {
+		errRes = dto.ErrorResponse{
+			Status: 500,
+			Error:  err.Error(),
+		}
+		return nil, &errRes
+	}
+	return &dto.ProjectDetailResponse{
+		ID:       projectID,
+		Name:     project.Name,
+		TenantID: project.TenantID,
+		Configuration: dto.ProjectConfig{
+			ProjectID:          projectID,
+			Threshold:          project.Threshold,
+			SessionTime:        project.SessionTime,
+			Host:               project.Host.String,
+			BaseURL:            project.BaseURL.String,
+			MaxUsersInQueue:    project.MaxUsersInQueue,
+			QueueStart:         project.QueueEnd.Time,
+			QueueEnd:           project.QueueEnd.Time,
+			QueuePageStyle:     project.QueuePageStyle,
+			QueueHTMLPage:      project.QueueHTMLPage.String,
+			QueuePageBaseColor: project.QueuePageBaseColor.String,
+			QueuePageTitle:     project.QueuePageTitle.String,
+			QueuePageLogo:      project.QueuePageLogo.String,
+			IsConfigure:        project.IsConfigure,
+		},
+	}, nil
+}
+
 func (u *Usecase) CheckHealthProject(ctx context.Context, projectID string) (*dto.CheckHealthProjectResponse, *dto.ErrorResponse) {
 	var errRes dto.ErrorResponse
 	client := &http.Client{}

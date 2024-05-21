@@ -59,9 +59,9 @@ func (r *Repository) GetTenantByID(ctx context.Context, id string) (*entity.Proj
 	return &project, err
 }
 
-func (r *Repository) GetTenantProjectByID(ctx context.Context, id, tenantID string) (*entity.Project, error) {
-	project := entity.Project{}
-	q := `SELECT * FROM projects WHERE id = $1 AND tenant_id = $2 LIMIT 1`
+func (r *Repository) GetTenantProjectByID(ctx context.Context, id, tenantID string) (*entity.ProjectWithConfig, error) {
+	project := entity.ProjectWithConfig{}
+	q := `SELECT * FROM projects INNER JOIN configurations ON projects.id = configurations.project_id WHERE projects.id = $1 AND projects.tenant_id = $2 LIMIT 1`
 	err := r.db.GetContext(ctx, &project, q, id, tenantID)
 	if err != nil {
 		return nil, err
