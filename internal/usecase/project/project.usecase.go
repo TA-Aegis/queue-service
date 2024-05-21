@@ -1,26 +1,30 @@
 package project
 
 import (
+	"antrein/bc-dashboard/internal/repository/infra"
 	"antrein/bc-dashboard/internal/repository/project"
 	"antrein/bc-dashboard/model/config"
 	"antrein/bc-dashboard/model/dto"
 	"antrein/bc-dashboard/model/entity"
 	"context"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/lib/pq"
 )
 
 type Usecase struct {
-	cfg  *config.Config
-	repo *project.Repository
+	cfg       *config.Config
+	repo      *project.Repository
+	infraRepo *infra.Repository
 }
 
-func New(cfg *config.Config, repo *project.Repository) *Usecase {
+func New(cfg *config.Config, repo *project.Repository, infraRepo *infra.Repository) *Usecase {
 	return &Usecase{
-		cfg:  cfg,
-		repo: repo,
+		cfg:       cfg,
+		repo:      repo,
+		infraRepo: infraRepo,
 	}
 }
 
@@ -57,5 +61,46 @@ func (u *Usecase) RegisterNewProject(ctx context.Context, req dto.CreateProjectR
 			Name:     created.Name,
 			TenantID: created.TenantID,
 		},
+	}, nil
+}
+
+func (u *Usecase) GetListProject(ctx context.Context, tenantID string) (*dto.ListProjectResponse, *dto.ErrorResponse) {
+	var errRes dto.ErrorResponse
+	projects, err := u.repo.GetTenantProjects(ctx, tenantID)
+	if err != nil {
+		errRes = dto.ErrorResponse{
+			Status: 500,
+			Error:  err.Error(),
+		}
+		return nil, &errRes
+	}
+	listProjects := make([]dto.Project, len(projects))
+	for i, project := range projects {
+		listProjects[i] = dto.Project{
+			ID:       project.ID,
+			Name:     project.Name,
+			TenantID: tenantID,
+		}
+	}
+	return &dto.ListProjectResponse{
+		TenantID: tenantID,
+		Projects: listProjects,
+	}, nil
+}
+
+func (u *Usecase) CheckHealthProject(ctx context.Context, projectID string) (*dto.CheckHealthProjectResponse, *dto.ErrorResponse) {
+	var errRes dto.ErrorResponse
+	client := &http.Client{}
+	healthiness, err := u.infraRepo.CheckHealthProject(client, projectID)
+	if err != nil {
+		errRes = dto.ErrorResponse{
+			Status: 500,
+			Error:  err.Error(),
+		}
+		return nil, &errRes
+	}
+	return &dto.CheckHealthProjectResponse{
+		ID:          projectID,
+		Healthiness: healthiness,
 	}, nil
 }

@@ -144,7 +144,7 @@ func AuthGuard(cfg *config.Config, handlerFunc func(g *AuthGuardContext) error) 
 				return c.Status(fiber.StatusUnauthorized).JSON(dto.DefaultResponse{
 					Status:  http.StatusUnauthorized,
 					Message: statusErrorMap[http.StatusUnauthorized],
-					Error:   "Sesi anda telah berakhir",
+					Error:   "Tidak ada autentikasi",
 				})
 			},
 		}),

@@ -11,6 +11,16 @@ type CreateProjectRequest struct {
 	Name string `json:"name"`
 }
 
+type ListProjectResponse struct {
+	TenantID string    `json:"tenant_id"`
+	Projects []Project `json:"projects"`
+}
+
+type CheckHealthProjectResponse struct {
+	ID          string `json:"id"`
+	Healthiness bool   `json:"healthiness"`
+}
+
 type CreateProjectResponse struct {
 	Project
 }

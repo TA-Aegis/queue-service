@@ -31,6 +31,8 @@ func New(cfg *config.Config, usecase *project.Usecase, configUsecase *configurat
 
 func (r *Router) RegisterRoute(app *fiber.App) {
 	g := app.Group("/bc/dashboard/project")
+	g.Get("/list", guard.AuthGuard(r.cfg, r.GetListProjects)...)
+	g.Get("/health/:id", guard.AuthGuard(r.cfg, r.CheckHealthProject)...)
 	g.Post("", guard.AuthGuard(r.cfg, r.CreateProject)...)
 	g.Put("/config", guard.AuthGuard(r.cfg, r.UpdateProjectConfig)...)
 	g.Put("/style", guard.AuthGuard(r.cfg, r.UpdateProjectStyle)...)
@@ -106,4 +108,26 @@ func (r *Router) UpdateProjectStyle(g *guard.AuthGuardContext) error {
 	}
 
 	return g.ReturnSuccess("Berhasil mengupdate tampilan project")
+}
+
+func (r *Router) GetListProjects(g *guard.AuthGuardContext) error {
+	ctx := g.FiberCtx.Context()
+	tenantID := g.Claims.UserID
+	resp, errRes := r.usecase.GetListProject(ctx, tenantID)
+	if errRes != nil {
+		return g.ReturnError(errRes.Status, errRes.Error)
+	}
+
+	return g.ReturnSuccess(resp)
+}
+
+func (r *Router) CheckHealthProject(g *guard.AuthGuardContext) error {
+	projectID := g.FiberCtx.Params("id")
+	ctx := g.FiberCtx.Context()
+	resp, errRes := r.usecase.CheckHealthProject(ctx, projectID)
+	if errRes != nil {
+		return g.ReturnError(errRes.Status, errRes.Error)
+	}
+
+	return g.ReturnSuccess(resp)
 }

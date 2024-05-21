@@ -4,6 +4,7 @@ import (
 	"antrein/bc-dashboard/model/config"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -26,7 +27,12 @@ type InfraBody struct {
 }
 
 func (r *Repository) GetInfraProjects(client *http.Client) ([]string, error) {
-	resp, err := client.Get(r.cfg.Infra.ManagerURL + "/kube/project")
+	req, err := http.NewRequest("GET", r.cfg.Infra.ManagerURL+"/kube/project", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -70,6 +76,41 @@ func (r *Repository) CreateInfraProject(client *http.Client, infraBody InfraBody
 		return fmt.Errorf("failed to create project, status code: %d", resp.StatusCode)
 	}
 	return nil
+}
+
+func (r *Repository) CheckHealthProject(client *http.Client, projectId string) (bool, error) {
+	req, err := http.NewRequest("GET", r.cfg.Infra.ManagerURL+"/kube/health/"+projectId, nil)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Status string `json:"status"`
+		Data   struct {
+			Healthiness bool `json:"healthiness"`
+		} `json:"data"`
+	}
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
+
+	err = json.Unmarshal(bodyBytes, &result)
+	if err != nil {
+		return false, err
+	}
+
+	if result.Status == "failed" {
+		return false, errors.New("Project not found")
+	}
+	return result.Data.Healthiness, nil
 }
 
 func (r *Repository) DeleteInfraProject(client *http.Client, projectId string) error {
