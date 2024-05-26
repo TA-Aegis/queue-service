@@ -92,7 +92,6 @@ func (r *Router) UpdateProjectConfig(g *guard.AuthGuardContext) error {
 func (r *Router) UpdateProjectStyle(g *guard.AuthGuardContext) error {
 	req := dto.UpdateProjectStyle{}
 
-	// Parse form data
 	form, err := g.FiberCtx.MultipartForm()
 	if err != nil {
 		return g.ReturnError(http.StatusBadRequest, "Request tidak sesuai format")
@@ -120,12 +119,17 @@ func (r *Router) UpdateProjectStyle(g *guard.AuthGuardContext) error {
 	}
 
 	imageFile, err := g.FiberCtx.FormFile("image")
-	if err != nil {
+	if err != nil && err.Error() != "there is no uploaded file associated with the given key" {
 		return g.ReturnError(http.StatusBadRequest, "Gagal mendapatkan file logo")
 	}
 
+	htmlFile, err := g.FiberCtx.FormFile("file")
+	if err != nil && err.Error() != "there is no uploaded file associated with the given key" {
+		return g.ReturnError(http.StatusBadRequest, "Gagal mendapatkan file html")
+	}
+
 	ctx := g.FiberCtx.Context()
-	errRes := r.configUsecase.UpdateProjectStyle(ctx, req, imageFile, imageFile)
+	errRes := r.configUsecase.UpdateProjectStyle(ctx, req, imageFile, htmlFile)
 	if errRes != nil {
 		return g.ReturnError(errRes.Status, errRes.Error)
 	}

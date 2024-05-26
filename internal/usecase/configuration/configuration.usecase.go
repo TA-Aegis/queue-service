@@ -8,10 +8,13 @@ import (
 	"antrein/bc-dashboard/model/entity"
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -26,6 +29,42 @@ func New(cfg *config.Config, repo *configuration.Repository, infraRepo *infra.Re
 		cfg:       cfg,
 		repo:      repo,
 		infraRepo: infraRepo,
+	}
+}
+
+func loadDefaultHTML() (string, error) {
+	filePath := "./files/templates/queue.html"
+	htmlFile, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer htmlFile.Close()
+
+	content, err := io.ReadAll(htmlFile)
+	if err != nil {
+		return "", err
+	}
+
+	return string(content), nil
+}
+
+func readFileContent(file *multipart.FileHeader) ([]byte, error) {
+	f, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return io.ReadAll(f)
+}
+
+func changeValueInHTML(html, name, value string) string {
+	return strings.Replace(html, name, value, 1)
+}
+
+func handleError(status int, message string) *dto.ErrorResponse {
+	return &dto.ErrorResponse{
+		Status: status,
+		Error:  message,
 	}
 }
 
@@ -167,29 +206,58 @@ func (u *Usecase) UpdateProjectConfig(ctx context.Context, req dto.UpdateProject
 }
 
 func (u *Usecase) UpdateProjectStyle(ctx context.Context, req dto.UpdateProjectStyle, imageFile *multipart.FileHeader, htmlFile *multipart.FileHeader) *dto.ErrorResponse {
-	var errRes dto.ErrorResponse
-
+	logoURL := "https://lh3.googleusercontent.com/proxy/ADW02XxlWJtFJ9MfhL0gRPFhUb9pDx08u6hlXUceO35UBGZncB9B9KdKoeiZW0K6rK1cJfYlRULTZaB-8zOJBFkEuhe8jC_9xivMaDIqA9TpJHQTV_5zmCsNkFzvH0uxICaV-v_F367S8xK5fe2bXINYVkz2CpNToA"
 	if req.QueuePageStyle == "base" {
 		if imageFile != nil {
-			image, err := imageFile.Open()
+			imageContent, err := readFileContent(imageFile)
 			if err != nil {
+				return handleError(http.StatusBadRequest, "Gagal membaca file image")
 			}
-			imageContent, err := io.ReadAll(image)
-			if err != nil {
-			}
-			err = u.infraRepo.UploadLogoFile(&http.Client{}, dto.File{
-				Filename: req.ProjectID,
+			logoURL, err = u.infraRepo.UploadLogoFile(&http.Client{}, dto.File{
+				Filename: imageFile.Filename,
 				Content:  imageContent,
 			})
+			if err != nil {
+				return handleError(http.StatusInternalServerError, "Gagal upload file image")
+			}
+		}
+
+		htmlTemplate, err := loadDefaultHTML()
+		if err != nil {
+			return handleError(http.StatusInternalServerError, "Gagal membuka file template")
+		}
+
+		if req.QueuePageBaseColor != "" {
+			htmlTemplate = changeValueInHTML(htmlTemplate, "var(--base-color, #f1f1f1)", req.QueuePageBaseColor)
+		}
+
+		htmlTemplate = changeValueInHTML(htmlTemplate, "{queue_logo}", logoURL)
+		htmlTemplate = changeValueInHTML(htmlTemplate, "{queue_title}", req.QueuePageTitle)
+
+		err = u.infraRepo.UploadHTMLFile(&http.Client{}, dto.File{
+			Filename: req.ProjectID,
+			Content:  []byte(htmlTemplate),
+		})
+		if err != nil {
+			return handleError(http.StatusInternalServerError, "Gagal upload HTML file")
 		}
 	} else if req.QueuePageStyle == "custom" {
-
-	} else {
-		errRes = dto.ErrorResponse{
-			Status: 400,
-			Error:  "Tipe style tidak valid",
+		if htmlFile == nil {
+			return handleError(http.StatusBadRequest, "Mohon sertakan file HTML")
 		}
-		return &errRes
+		htmlContent, err := readFileContent(htmlFile)
+		if err != nil {
+			return handleError(http.StatusBadRequest, "Gagal membaca file HTML")
+		}
+		err = u.infraRepo.UploadHTMLFile(&http.Client{}, dto.File{
+			Filename: req.ProjectID,
+			Content:  htmlContent,
+		})
+		if err != nil {
+			return handleError(http.StatusInternalServerError, "Gagal upload HTML file")
+		}
+	} else {
+		return handleError(http.StatusBadRequest, "Tipe style tidak valid")
 	}
 
 	config := entity.Configuration{
@@ -197,7 +265,7 @@ func (u *Usecase) UpdateProjectStyle(ctx context.Context, req dto.UpdateProjectS
 		QueuePageStyle: req.QueuePageStyle,
 		QueueHTMLPage: sql.NullString{
 			Valid:  true,
-			String: req.QueueHTMLPage,
+			String: fmt.Sprintf("https://storage.googleapis.com/antrein-ta/html_templates/%s.html", req.ProjectID),
 		},
 		QueuePageBaseColor: sql.NullString{
 			Valid:  true,
@@ -209,25 +277,17 @@ func (u *Usecase) UpdateProjectStyle(ctx context.Context, req dto.UpdateProjectS
 		},
 		QueuePageLogo: sql.NullString{
 			Valid:  true,
-			String: req.QueuePageLogo,
+			String: logoURL,
 		},
 	}
 
-	err := u.repo.UpdateProjectConfig(ctx, config)
+	err := u.repo.UpdateProjectStyle(ctx, config)
 	if err != nil {
-		log.Println("Error gagal mengupdate tampilan project", err)
+		log.Println("Error updating project style", err)
 		if err == sql.ErrNoRows {
-			errRes = dto.ErrorResponse{
-				Status: 404,
-				Error:  "Project dengan id tersebut tidak ditemukan",
-			}
-			return &errRes
+			return handleError(http.StatusNotFound, "Project tidak ditemukan")
 		}
-		errRes = dto.ErrorResponse{
-			Status: 500,
-			Error:  "Gagal mengupdate tampilan project",
-		}
-		return &errRes
+		return handleError(http.StatusInternalServerError, "Gagal mengupdate project style")
 	}
 
 	return nil

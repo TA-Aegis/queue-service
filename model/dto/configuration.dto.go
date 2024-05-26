@@ -33,8 +33,6 @@ type UpdateProjectConfig struct {
 type UpdateProjectStyle struct {
 	ProjectID          string `json:"project_id"`
 	QueuePageStyle     string `json:"queue_page_style"`
-	QueueHTMLPage      string `json:"queue_html_page,omitempty"`
 	QueuePageBaseColor string `json:"queue_page_base_color,omitempty"`
 	QueuePageTitle     string `json:"queue_page_title,omitempty"`
-	QueuePageLogo      string `json:"queue_page_logo,omitempty"`
 }
