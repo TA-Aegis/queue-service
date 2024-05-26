@@ -92,9 +92,26 @@ func (r *Router) UpdateProjectConfig(g *guard.AuthGuardContext) error {
 func (r *Router) UpdateProjectStyle(g *guard.AuthGuardContext) error {
 	req := dto.UpdateProjectStyle{}
 
-	err := g.FiberCtx.BodyParser(&req)
+	// Parse form data
+	form, err := g.FiberCtx.MultipartForm()
 	if err != nil {
 		return g.ReturnError(http.StatusBadRequest, "Request tidak sesuai format")
+	}
+
+	if val, ok := form.Value["project_id"]; ok && len(val) > 0 {
+		req.ProjectID = val[0]
+	}
+
+	if val, ok := form.Value["queue_page_style"]; ok && len(val) > 0 {
+		req.QueuePageStyle = val[0]
+	}
+
+	if val, ok := form.Value["queue_page_base_color"]; ok && len(val) > 0 {
+		req.QueuePageBaseColor = val[0]
+	}
+
+	if val, ok := form.Value["queue_page_title"]; ok && len(val) > 0 {
+		req.QueuePageTitle = val[0]
 	}
 
 	err = r.vld.StructCtx(g.FiberCtx.Context(), &req)
@@ -102,8 +119,13 @@ func (r *Router) UpdateProjectStyle(g *guard.AuthGuardContext) error {
 		return g.ReturnError(http.StatusBadRequest, "Request tidak sesuai format")
 	}
 
+	imageFile, err := g.FiberCtx.FormFile("image")
+	if err != nil {
+		return g.ReturnError(http.StatusBadRequest, "Gagal mendapatkan file logo")
+	}
+
 	ctx := g.FiberCtx.Context()
-	errRes := r.configUsecase.UpdateProjectStyle(ctx, req)
+	errRes := r.configUsecase.UpdateProjectStyle(ctx, req, imageFile, imageFile)
 	if errRes != nil {
 		return g.ReturnError(errRes.Status, errRes.Error)
 	}

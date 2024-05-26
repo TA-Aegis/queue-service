@@ -16,7 +16,7 @@ type CommonUsecase struct {
 
 func NewCommonUsecase(cfg *config.Config, repo *repository.CommonRepository) (*CommonUsecase, error) {
 	authUsecase := auth.New(cfg, repo.TenantRepo)
-	configUsecase := configuration.New(cfg, repo.ConfigRepo)
+	configUsecase := configuration.New(cfg, repo.ConfigRepo, repo.InfraRepo)
 	projectUsecase := project.New(cfg, repo.ProjectRepo, repo.InfraRepo)
 
 	commonUC := CommonUsecase{

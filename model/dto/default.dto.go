@@ -1,5 +1,10 @@
 package dto
 
+type File struct {
+	Filename string
+	Content  []byte
+}
+
 type ErrorResponse struct {
 	Status int    `json:"status"`
 	Error  string `json:"error"`

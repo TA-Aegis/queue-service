@@ -2,11 +2,13 @@ package infra
 
 import (
 	"antrein/bc-dashboard/model/config"
+	"antrein/bc-dashboard/model/dto"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 )
 
@@ -75,6 +77,39 @@ func (r *Repository) CreateInfraProject(client *http.Client, infraBody InfraBody
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to create project, status code: %d", resp.StatusCode)
 	}
+	return nil
+}
+
+func (r *Repository) UploadLogoFile(client *http.Client, file dto.File) error {
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+
+	fw, err := w.CreateFormFile("file", file.Filename)
+	if err != nil {
+		return err
+	}
+	if _, err = fw.Write(file.Content); err != nil {
+		return err
+	}
+
+	w.Close()
+
+	req, err := http.NewRequest("POST", r.cfg.Infra.ManagerURL+"/storage/assets", &b)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", w.FormDataContentType())
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to upload file, status code: %d", resp.StatusCode)
+	}
+
 	return nil
 }
 

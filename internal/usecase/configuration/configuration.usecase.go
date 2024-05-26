@@ -2,24 +2,30 @@ package configuration
 
 import (
 	"antrein/bc-dashboard/internal/repository/configuration"
+	"antrein/bc-dashboard/internal/repository/infra"
 	"antrein/bc-dashboard/model/config"
 	"antrein/bc-dashboard/model/dto"
 	"antrein/bc-dashboard/model/entity"
 	"context"
 	"database/sql"
+	"io"
 	"log"
+	"mime/multipart"
+	"net/http"
 	"time"
 )
 
 type Usecase struct {
-	cfg  *config.Config
-	repo *configuration.Repository
+	cfg       *config.Config
+	repo      *configuration.Repository
+	infraRepo *infra.Repository
 }
 
-func New(cfg *config.Config, repo *configuration.Repository) *Usecase {
+func New(cfg *config.Config, repo *configuration.Repository, infraRepo *infra.Repository) *Usecase {
 	return &Usecase{
-		cfg:  cfg,
-		repo: repo,
+		cfg:       cfg,
+		repo:      repo,
+		infraRepo: infraRepo,
 	}
 }
 
@@ -160,8 +166,31 @@ func (u *Usecase) UpdateProjectConfig(ctx context.Context, req dto.UpdateProject
 	return nil
 }
 
-func (u *Usecase) UpdateProjectStyle(ctx context.Context, req dto.UpdateProjectStyle) *dto.ErrorResponse {
+func (u *Usecase) UpdateProjectStyle(ctx context.Context, req dto.UpdateProjectStyle, imageFile *multipart.FileHeader, htmlFile *multipart.FileHeader) *dto.ErrorResponse {
 	var errRes dto.ErrorResponse
+
+	if req.QueuePageStyle == "base" {
+		if imageFile != nil {
+			image, err := imageFile.Open()
+			if err != nil {
+			}
+			imageContent, err := io.ReadAll(image)
+			if err != nil {
+			}
+			err = u.infraRepo.UploadLogoFile(&http.Client{}, dto.File{
+				Filename: req.ProjectID,
+				Content:  imageContent,
+			})
+		}
+	} else if req.QueuePageStyle == "custom" {
+
+	} else {
+		errRes = dto.ErrorResponse{
+			Status: 400,
+			Error:  "Tipe style tidak valid",
+		}
+		return &errRes
+	}
 
 	config := entity.Configuration{
 		ProjectID:      req.ProjectID,
