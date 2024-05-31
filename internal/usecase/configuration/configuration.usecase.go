@@ -224,6 +224,7 @@ func (u *Usecase) UpdateProjectStyle(ctx context.Context, req dto.UpdateProjectS
 
 		htmlTemplate, err := loadDefaultHTML()
 		if err != nil {
+			log.Println(err)
 			return handleError(http.StatusInternalServerError, "Gagal membuka file template")
 		}
 
