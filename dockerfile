@@ -23,6 +23,7 @@ WORKDIR /app
 COPY --from=builder /app/binary .
 COPY --from=builder /app/files/migrations/migrate.sql ./files/migrations/migrate.sql
 COPY --from=builder /app/files/secrets/secrets.config.json ./files/secrets/secrets.config.json
+COPY --from=builder /app/files/templates/queue.html ./files/templates/queue.html
 
 EXPOSE 8080
 EXPOSE 9090
