@@ -11,6 +11,7 @@ import (
 	pb "github.com/antrein/proto-repository/pb/bc"
 	"github.com/gofiber/adaptor/v2"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 
 	"google.golang.org/grpc"
 )
@@ -51,6 +52,7 @@ func (c *Client) StreamAnalyticData(w http.ResponseWriter, r *http.Request) {
 		ProjectId: projectID,
 	})
 	if err != nil {
+		log.Error(err)
 		http.Error(w, "Error connecting to gRPC stream", http.StatusInternalServerError)
 		return
 	}
@@ -63,17 +65,20 @@ func (c *Client) StreamAnalyticData(w http.ResponseWriter, r *http.Request) {
 		default:
 			analyticData, err := stream.Recv()
 			if err != nil {
+				log.Error(err)
 				http.Error(w, "Error receiving data from gRPC stream", http.StatusInternalServerError)
 				return
 			}
 			jsonData, err := json.Marshal(analyticData)
 			if err != nil {
+				log.Error(err)
 				http.Error(w, "Error marshaling data to JSON", http.StatusInternalServerError)
 				return
 			}
 
 			_, err = fmt.Fprintf(w, "data: %s\n\n", jsonData)
 			if err != nil {
+				log.Error(err)
 				http.Error(w, "Error writing to response", http.StatusInternalServerError)
 				return
 			}
@@ -81,6 +86,7 @@ func (c *Client) StreamAnalyticData(w http.ResponseWriter, r *http.Request) {
 			if flusher, ok := w.(http.Flusher); ok {
 				flusher.Flush()
 			} else {
+				log.Error(err)
 				http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
 				return
 			}
