@@ -1,12 +1,13 @@
 package config
 
 type Config struct {
-	Server   ServerConfig   `json:"server"`
-	Database DatabaseConfig `json:"database"`
-	Secrets  SecretConfig   `json:"secrets"`
-	Stage    string         `json:"stage"`
-	Infra    InfraConfig    `json:"infra"`
-	SMTP     SMTPConfig     `json:"smtp"`
+	Server     ServerConfig   `json:"server"`
+	Database   DatabaseConfig `json:"database"`
+	Secrets    SecretConfig   `json:"secrets"`
+	Stage      string         `json:"stage"`
+	Infra      InfraConfig    `json:"infra"`
+	SMTP       SMTPConfig     `json:"smtp"`
+	GRPCConfig GRPCConfig     `json:"grpc"`
 }
 
 type PostgreConfig struct {
@@ -49,4 +50,8 @@ type SMTPConfig struct {
 type InfraConfig struct {
 	Mode       string `json:"mode"`
 	ManagerURL string `json:"manager_url"`
+}
+
+type GRPCConfig struct {
+	DashboardQueue string `json:"dashboard_queue"`
 }

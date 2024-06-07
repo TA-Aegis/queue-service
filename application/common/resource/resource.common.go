@@ -8,14 +8,17 @@ import (
 	"os"
 
 	_ "github.com/lib/pq"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/jmoiron/sqlx"
 )
 
 type CommonResource struct {
-	Db  *sqlx.DB
-	Vld *validator.Validate
+	Db   *sqlx.DB
+	Vld  *validator.Validate
+	GRPC *grpc.ClientConn
 }
 
 func NewCommonResource(cfg *config.Config, ctx context.Context) (*CommonResource, error) {
@@ -31,9 +34,15 @@ func NewCommonResource(cfg *config.Config, ctx context.Context) (*CommonResource
 
 	vld := validator.New()
 
+	grpcClient, err := grpc.Dial(cfg.GRPCConfig.DashboardQueue, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+
 	rsc := CommonResource{
-		Db:  db,
-		Vld: vld,
+		Db:   db,
+		Vld:  vld,
+		GRPC: grpcClient,
 	}
 	return &rsc, nil
 }

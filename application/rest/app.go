@@ -3,6 +3,7 @@ package rest
 import (
 	"antrein/bc-dashboard/application/common/resource"
 	"antrein/bc-dashboard/application/common/usecase"
+	"antrein/bc-dashboard/internal/handler/grpc/analytic"
 	"antrein/bc-dashboard/internal/handler/rest/auth"
 	"antrein/bc-dashboard/internal/handler/rest/project"
 	"antrein/bc-dashboard/model/config"
@@ -48,6 +49,10 @@ func ApplicationDelegate(cfg *config.Config, uc *usecase.CommonUsecase, rsc *res
 	// project
 	projectRoute := project.New(cfg, uc.ProjectUsecase, uc.ConfigUsecase, rsc.Vld)
 	projectRoute.RegisterRoute(app)
+
+	// analytic
+	analyticRouter := analytic.New(cfg, rsc.GRPC)
+	analyticRouter.RegisterRoute(app)
 
 	return app, nil
 }
