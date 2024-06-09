@@ -1,17 +1,15 @@
 package analytic
 
 import (
+	guard "antrein/bc-dashboard/application/middleware"
 	"antrein/bc-dashboard/model/config"
+	"antrein/bc-dashboard/model/dto"
 	"context"
-	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
-	"time"
 
 	pb "github.com/antrein/proto-repository/pb/bc"
-	"github.com/gofiber/adaptor/v2"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/log"
+	"github.com/gorilla/mux"
 
 	"google.golang.org/grpc"
 )
@@ -28,23 +26,20 @@ func New(cfg *config.Config, gc *grpc.ClientConn) *Client {
 	}
 }
 
-func (c *Client) RegisterRoute(app *fiber.App) {
-	app.Get("/bc/dashboard/analytic", adaptor.HTTPHandler(http.HandlerFunc(c.StreamAnalyticData)))
+func (c *Client) RegisterRoute(app *mux.Router) {
+	app.HandleFunc("/bc/dashboard/analytic", guard.DefaultGuard(c.StreamAnalyticData))
 }
 
-func handler(f http.HandlerFunc) http.Handler {
-	return http.HandlerFunc(f)
-}
-
-func (c *Client) StreamAnalyticData(w http.ResponseWriter, r *http.Request) {
+func (c *Client) StreamAnalyticData(g *guard.GuardContext) error {
 	// Set headers for SSE
 	ctx := context.Background()
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	g.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	g.ResponseWriter.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	g.ResponseWriter.Header().Set("Content-Type", "text/event-stream")
+	g.ResponseWriter.Header().Set("Cache-Control", "no-cache")
+	g.ResponseWriter.Header().Set("Connection", "keep-alive")
 
-	projectID := r.URL.Query().Get("project_id")
+	projectID := g.Request.URL.Query().Get("project_id")
 
 	client := pb.NewAnalyticServiceClient(c.grpcClient)
 
@@ -52,48 +47,34 @@ func (c *Client) StreamAnalyticData(w http.ResponseWriter, r *http.Request) {
 		ProjectId: projectID,
 	})
 	if err != nil {
-		log.Error(err)
-		http.Error(w, "Error connecting to gRPC stream", http.StatusInternalServerError)
-		return
+		log.Println(err)
+		return g.ReturnError(http.StatusInternalServerError, "Error connecting to gRPC stream")
 	}
 
 	for ctx.Err() == nil {
 		select {
 		case <-ctx.Done():
-			http.Error(w, "Stream done", http.StatusInternalServerError)
-			return
+			return g.ReturnSuccess("Stream done")
 		default:
 			analyticData, err := stream.Recv()
 			if err != nil {
-				log.Error(err)
-				http.Error(w, "Error receiving data from gRPC stream", http.StatusInternalServerError)
-				return
+				log.Println("Error receiving data from gRPC:", err)
+				return g.ReturnError(http.StatusInternalServerError, "Error sent data from stream")
 			}
-			jsonData, err := json.Marshal(analyticData)
+			data := dto.Analytic{
+				ProjectID:         projectID,
+				TimeStamp:         analyticData.GetTimestamp().AsTime(),
+				TotalUsersInQueue: int(analyticData.TotalUsersInQueue),
+				TotalUsersInRoom:  int(analyticData.TotalUsersInRoom),
+				TotalUsers:        int(analyticData.TotalUsers),
+			}
+			err = g.ReturnEvent(data)
 			if err != nil {
-				log.Error(err)
-				http.Error(w, "Error marshaling data to JSON", http.StatusInternalServerError)
-				return
+				log.Println("Error sending data to client:", err)
+				return g.ReturnError(http.StatusInternalServerError, "Error sent data from stream")
 			}
-
-			_, err = fmt.Fprintf(w, "data: %s\n\n", jsonData)
-			if err != nil {
-				log.Error(err)
-				http.Error(w, "Error writing to response", http.StatusInternalServerError)
-				return
-			}
-
-			if flusher, ok := w.(http.Flusher); ok {
-				flusher.Flush()
-			} else {
-				log.Error(err)
-				http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
-				return
-			}
-
-			time.Sleep(1 * time.Second)
 		}
 	}
 
-	http.Error(w, "Stream done", http.StatusInternalServerError)
+	return g.ReturnSuccess("Stream done")
 }

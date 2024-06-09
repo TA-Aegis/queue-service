@@ -7,52 +7,77 @@ import (
 	"antrein/bc-dashboard/internal/handler/rest/auth"
 	"antrein/bc-dashboard/internal/handler/rest/project"
 	"antrein/bc-dashboard/model/config"
+	"compress/gzip"
+	"fmt"
+	"net/http"
+	"strings"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/compress"
-	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gorilla/mux"
 )
 
-func ApplicationDelegate(cfg *config.Config, uc *usecase.CommonUsecase, rsc *resource.CommonResource) (*fiber.App, error) {
-	app := fiber.New(fiber.Config{
-		AppName: "BC Dashboard",
+func setupCORS(w http.ResponseWriter) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE, PATCH")
+	w.Header().Set("Agccess-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
+}
+
+type gzipResponseWriter struct {
+	http.ResponseWriter
+	Writer *gzip.Writer
+}
+
+func (w gzipResponseWriter) Write(b []byte) (int, error) {
+	return w.Writer.Write(b)
+}
+
+func compressHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+			next.ServeHTTP(w, r)
+			return
+		}
+		w.Header().Set("Content-Encoding", "gzip")
+		gz, _ := gzip.NewWriterLevel(w, gzip.BestSpeed)
+		defer gz.Close()
+
+		gzw := gzipResponseWriter{ResponseWriter: w, Writer: gz}
+		next.ServeHTTP(gzw, r)
 	})
+}
 
-	// setup gzip
-	app.Use(compress.New(compress.Config{
-		Level: compress.LevelBestSpeed, // 1
-	}))
+func ApplicationDelegate(cfg *config.Config, uc *usecase.CommonUsecase, rsc *resource.CommonResource) (http.Handler, error) {
+	router := mux.NewRouter()
 
-	// setup cors
-	app.Use(cors.New(cors.Config{
-		AllowHeaders: "Origin,Content-Type,Accept,Content-Length,Accept-Language,Accept-Encoding,Connection,Access-Control-Allow-Origin,Authorization",
-		AllowOrigins: "*",
-		AllowMethods: "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
-	}))
-
-	dashboard := app.Group("bc/dashboard")
-
-	dashboard.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Makan nasi pagi-pagi, ngapain kamu disini?")
+	router.HandleFunc("/bc/dashboard", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Makan nasi pagi-pagi, ngapain kamu disini?")
 	})
-
-	dashboard.Get("/ping", func(c *fiber.Ctx) error {
-		return c.SendString("pong!")
+	router.HandleFunc("/bc/dashboard/ping", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "pong!")
 	})
 
 	// routes
 
 	// auth
 	authRoute := auth.New(cfg, uc.AuthUsecase, rsc.Vld)
-	authRoute.RegisterRoute(app)
+	authRoute.RegisterRoute(router)
 
 	// project
 	projectRoute := project.New(cfg, uc.ProjectUsecase, uc.ConfigUsecase, rsc.Vld)
-	projectRoute.RegisterRoute(app)
+	projectRoute.RegisterRoute(router)
 
 	// analytic
 	analyticRouter := analytic.New(cfg, rsc.GRPC)
-	analyticRouter.RegisterRoute(app)
+	analyticRouter.RegisterRoute(router)
 
-	return app, nil
+	handlerWithMiddleware := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		setupCORS(w)
+
+		if r.Method == "OPTIONS" {
+			return
+		}
+
+		compressHandler(router).ServeHTTP(w, r)
+	})
+
+	return handlerWithMiddleware, nil
 }
