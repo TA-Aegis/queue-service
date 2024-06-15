@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
@@ -129,12 +130,22 @@ func DefaultGuard(handlerFunc func(g *GuardContext) error) http.HandlerFunc {
 
 func AuthGuard(cfg *config.Config, handlerFunc func(g *AuthGuardContext) error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tokenString := r.Header.Get("Authrorization")
-		if tokenString == "" {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
 			http.Error(w, "Unauthorized - No token provided", http.StatusUnauthorized)
 			return
 		}
+
+		tokenString := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer"))
+		if tokenString == "" {
+			http.Error(w, "Unauthorized - Invalid token format", http.StatusUnauthorized)
+			return
+		}
+
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
 			return []byte(cfg.Secrets.JWTSecret), nil
 		})
 
