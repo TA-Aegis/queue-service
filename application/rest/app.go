@@ -48,7 +48,7 @@ func compressHandler(next http.Handler) http.Handler {
 func ApplicationDelegate(cfg *config.Config, uc *usecase.CommonUsecase, rsc *resource.CommonResource) (http.Handler, error) {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/bc/dashboard", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/bc/dashboard/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Makan nasi pagi-pagi, ngapain kamu disini?")
 	})
 	router.HandleFunc("/bc/dashboard/ping", func(w http.ResponseWriter, r *http.Request) {
