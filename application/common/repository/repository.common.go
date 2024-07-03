@@ -18,8 +18,8 @@ type CommonRepository struct {
 
 func NewCommonRepository(cfg *config.Config, rsc *resource.CommonResource) (*CommonRepository, error) {
 	tenantRepo := tenant.New(cfg, rsc.Db)
-	projectRepo := project.New(cfg, rsc.Db)
 	infraRepo := infra.New(cfg)
+	projectRepo := project.New(cfg, rsc.Db, infraRepo)
 	configRepo := configuration.New(cfg, rsc.Db, infraRepo)
 
 	commonRepo := CommonRepository{

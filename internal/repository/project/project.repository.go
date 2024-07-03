@@ -1,23 +1,27 @@
 package project
 
 import (
+	"antrein/bc-dashboard/internal/repository/infra"
 	"antrein/bc-dashboard/model/config"
 	"antrein/bc-dashboard/model/entity"
 	"context"
 	"database/sql"
+	"net/http"
 
 	"github.com/jmoiron/sqlx"
 )
 
 type Repository struct {
-	cfg *config.Config
-	db  *sqlx.DB
+	cfg       *config.Config
+	db        *sqlx.DB
+	infraRepo *infra.Repository
 }
 
-func New(cfg *config.Config, db *sqlx.DB) *Repository {
+func New(cfg *config.Config, db *sqlx.DB, infraRepo *infra.Repository) *Repository {
 	return &Repository{
-		cfg: cfg,
-		db:  db,
+		cfg:       cfg,
+		db:        db,
+		infraRepo: infraRepo,
 	}
 }
 
@@ -82,4 +86,40 @@ func (r *Repository) GetProjects(ctx context.Context, page int, pageSize int) ([
 	offset := (page - 1) * pageSize
 	err := r.db.SelectContext(ctx, &projects, q, pageSize, offset)
 	return projects, err
+}
+
+func (r *Repository) ClearAllProjects(ctx context.Context) error {
+	tx, err := r.db.BeginTxx(ctx, &sql.TxOptions{
+		Isolation: 2,
+		ReadOnly:  false,
+	})
+	q1 := `TRUNCATE TABLE configurations`
+	_, err = tx.ExecContext(ctx, q1)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	q2 := `TRUNCATE TABLE projects`
+	_, err = tx.ExecContext(ctx, q2)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil
+	}
+
+	client := &http.Client{}
+
+	err = r.infraRepo.ClearInfraProject(client)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
