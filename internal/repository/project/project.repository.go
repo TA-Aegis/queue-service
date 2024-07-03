@@ -93,14 +93,14 @@ func (r *Repository) ClearAllProjects(ctx context.Context) error {
 		Isolation: 2,
 		ReadOnly:  false,
 	})
-	q1 := `TRUNCATE TABLE configurations`
+	q1 := `TRUNCATE TABLE projects`
 	_, err = tx.ExecContext(ctx, q1)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	q2 := `TRUNCATE TABLE projects`
+	q2 := `TRUNCATE TABLE configurations`
 	_, err = tx.ExecContext(ctx, q2)
 	if err != nil {
 		tx.Rollback()
