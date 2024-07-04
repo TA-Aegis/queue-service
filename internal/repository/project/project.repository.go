@@ -6,6 +6,7 @@ import (
 	"antrein/bc-dashboard/model/entity"
 	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
@@ -89,37 +90,38 @@ func (r *Repository) GetProjects(ctx context.Context, page int, pageSize int) ([
 }
 
 func (r *Repository) ClearAllProjects(ctx context.Context) error {
+	// Start transaction
 	tx, err := r.db.BeginTxx(ctx, &sql.TxOptions{
-		Isolation: 2,
+		Isolation: sql.LevelDefault, // Using default isolation level for clarity
 		ReadOnly:  false,
 	})
-	q1 := `TRUNCATE TABLE configurations`
-	_, err = tx.ExecContext(ctx, q1)
 	if err != nil {
+		return err
+	}
+
+	q1 := `TRUNCATE TABLE configurations`
+	if _, err = tx.ExecContext(ctx, q1); err != nil {
+		fmt.Println(err)
 		tx.Rollback()
 		return err
 	}
 
 	q2 := `DELETE FROM projects`
-	_, err = tx.ExecContext(ctx, q2)
-	if err != nil {
+	if _, err = tx.ExecContext(ctx, q2); err != nil {
+		fmt.Println(err)
 		tx.Rollback()
 		return err
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil
+	if err = tx.Commit(); err != nil {
+		return err
 	}
 
 	client := &http.Client{}
-
-	err = r.infraRepo.ClearInfraProject(client)
-
-	if err != nil {
-		tx.Rollback()
+	if err = r.infraRepo.ClearInfraProject(client); err != nil {
+		fmt.Println(err)
 		return err
 	}
 
-	return tx.Commit()
+	return nil
 }
