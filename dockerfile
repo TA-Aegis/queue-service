@@ -29,3 +29,5 @@ EXPOSE 8080
 EXPOSE 9090
 
 ENTRYPOINT ["./binary"]
+
+# trigger new env
