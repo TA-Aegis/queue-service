@@ -30,4 +30,4 @@ EXPOSE 9090
 
 ENTRYPOINT ["./binary"]
 
-# trigger new env
+# trigger pipeline
