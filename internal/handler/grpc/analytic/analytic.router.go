@@ -28,6 +28,8 @@ func New(cfg *config.Config, gc *grpc.ClientConn) *Client {
 
 func (c *Client) RegisterRoute(app *mux.Router) {
 	app.HandleFunc("/bc/dashboard/analytic", guard.DefaultGuard(c.StreamAnalyticData))
+	app.HandleFunc("/bc/dashboard/analytic/{id}", guard.AuthGuard(c.cfg, c.GetProjectAnalytic))
+
 }
 
 func (c *Client) StreamAnalyticData(g *guard.GuardContext) error {
@@ -77,4 +79,39 @@ func (c *Client) StreamAnalyticData(g *guard.GuardContext) error {
 	}
 
 	return g.ReturnSuccess("Stream done")
+}
+
+func (c *Client) GetProjectAnalytic(g *guard.AuthGuardContext) error {
+	ok := guard.IsMethod(g.Request, "GET")
+	if !ok {
+		return g.ReturnError(http.StatusMethodNotAllowed, "Method not allowed")
+	}
+
+	projectID := guard.GetParam(g.Request, "id")
+	ctx := context.Background()
+	client := pb.NewAnalyticServiceClient(c.grpcClient)
+
+	stream, err := client.StreamRealtimeData(ctx, &pb.AnalyticRequest{
+		ProjectId: projectID,
+	})
+
+	if err != nil {
+		log.Println(err)
+		return g.ReturnError(http.StatusInternalServerError, "Error connecting to gRPC stream")
+	}
+
+	analyticData, err := stream.Recv()
+	if err != nil {
+		log.Println("Error receiving data from gRPC:", err)
+		return g.ReturnError(http.StatusInternalServerError, "Error sent data from stream")
+	}
+	resp := dto.Analytic{
+		ProjectID:         projectID,
+		TimeStamp:         analyticData.GetTimestamp().AsTime(),
+		TotalUsersInQueue: int(analyticData.TotalUsersInQueue),
+		TotalUsersInRoom:  int(analyticData.TotalUsersInRoom),
+		TotalUsers:        int(analyticData.TotalUsers),
+	}
+
+	return g.ReturnSuccess(resp)
 }
